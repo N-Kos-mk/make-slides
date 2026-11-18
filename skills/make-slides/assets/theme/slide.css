@@ -292,6 +292,15 @@ em { font-style: normal; font-weight: 700; }
 .fig.fill img { height: 100%; width: auto; max-width: 100%; object-fit: contain; }
 /* screenshots / photos get a hairline so a white edge is visible */
 .shot { outline: 1px solid var(--line); outline-offset: -1px; }
+/* one ring drawn over a figure: fig(…, ring=(l, t, r, b)). The frame is exactly the drawn image, so
+   the ellipse (in % of the image) lands where it was measured. With fill=True the box is a size
+   container and the image fits it with the container units, without letterboxing.               */
+.fig-frame { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
+.fig-frame > img { display: block; }
+.fig-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.fig-ring ellipse { fill: none; stroke: var(--hot); stroke-width: 2.5px; vector-effect: non-scaling-stroke; }
+.fig.fill .fig-box { container-type: size; align-self: stretch; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+.fig.fill .fig-box img { width: auto; height: auto; max-width: 100cqw; max-height: 100cqh; }
 
 /* ---------- samples: real images side by side, each with its value ------------------------
    <div class="samples"><figure class="sample"><img …><figcaption>
@@ -308,7 +317,10 @@ em { font-style: normal; font-weight: 700; }
 }
 .samples.tight { column-gap: 14px; }
 .sample { min-height: 0; min-width: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; row-gap: 6px; }
-.sample img { height: 100%; width: auto; max-width: 100%; object-fit: contain; }
+/* the image fits its cell without letterboxing, so a hairline (shot) runs round the image itself
+   even when images of different shapes stand side by side */
+.sample img { width: auto; height: auto; max-width: 100%; max-height: 100%; min-height: 0; align-self: end; }
+.samples.stack .sample img { align-self: center; }
 .sample figcaption { display: flex; flex-direction: column; align-items: center; }
 .sample-value { font-size: var(--fs-large); font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sample-value.accent { color: var(--accent); }
@@ -578,6 +590,8 @@ svg.dia { overflow: visible; font-family: var(--font); }
   color: var(--ink-2); font-variant-numeric: tabular-nums;
 }
 .refs i, .refs cite { font-style: italic; }   /* Latin journal titles only */
+/* a reference the material does not give: missing_ref("…") — left visible so that it is never mistaken for a finished entry */
+.refs li.ref-missing { color: var(--hot); font-weight: 700; }
 .slide.backmatter .body { justify-content: flex-start; }
 
 /* ---------- a disclosure the event requires (COI): the statement as a block on the centre line,

@@ -171,7 +171,9 @@ deck.slide(
   above it. Stubs (「見落としが多い」「費用が安い」) would not.
 - Two images for a contrast; three to six for a series (`tight=True`, `small=True`).
 - Under each image: the **value** it stands for, large; the one the slide is about in red
-  (`tone="hot"`). A per-image `note` (one short grey line) only when the comparison needs a second
+  (`tone="hot"`). When the images are cases told apart by a condition rather than a number, the
+  "value" may be that condition as a short name (「晴天」「雨天」): a few characters, bold,
+  directly under its image. A per-image `note` (one short grey line) only when the comparison needs a second
   quantity; otherwise say what the value is once, in `caption=` or in the message.
 - Choose examples that show the point without explanation: the extremes of the data.
 
@@ -435,9 +437,21 @@ deck.slide(
 - One short thing to say: a centred `conclusion` line, not a one-stub list at the left.
 - `fill=True` lets a photo or screenshot take all the free height. `shot=True` draws a hairline
   around an image with a white edge.
-- A figure taken from a paper carries its citation mark in the message or a bullet. When only the
-  picture of a figure is available, this is the pattern: crop it to the panels the slide needs,
-  and carry the point in the message (figures.md §1).
+- A figure taken from a paper (someone else's) carries its citation mark in the message or a
+  bullet. When only the picture of a figure is available, this is the pattern: crop it to the
+  panels the slide needs (`scripts/figpanels.py`), ring the place it is about, and read it in a
+  line or two:
+
+  ```python
+  sk.fig("figures/fig3_a.png", fill=True, ring=(300, 120, 700, 420)),   # the box, in the image's pixels
+  sk.points(["輝度の勾配の線だけが幅1mm未満で急に下がり本研究との差が開く"]),
+  ```
+
+  A dense original with only the message above it is not read by the audience (lint F9).
+- **A near-square figure beside bullets** (`cols`) pulls the weight of the slide to one side (L6),
+  and a column narrows the figure until its type is unreadable. Keep the default stack — figure
+  above, words below — and crop the figure to the panels that matter so that it is wide rather
+  than tall.
 
 ### K — Summary
 
@@ -604,6 +618,7 @@ deck.slide(
 | `deck.cover(title=None, event=, sub=, lines=[…], sec=, notes=)` | the cover: event (small) → title → short rule → lines (who / where / when). Break the title with `\n` |
 | `deck.slide(heading, message, *body, sec=, notes=, text_only=False, lint_off=)` | a main slide |
 | `deck.refs([…], heading="参考文献", per_slide=None)` | the reference list; `*…*` marks a journal or book title (italic in Latin script, plain in Japanese). Only the works cited on the slides. A list too long for one slide continues on further slides (「参考文献(1)」「(2)」) with the numbers running on — split by the length of the entries, or by `per_slide=N` |
+| `sk.missing_ref(name)` | an entry for `refs()` when the material does not give the reference of a work the slides name: it is shown red as 「出典未確認」, saving the deck warns, lint warns (C2), and the report names it first. Never write a reference from memory instead |
 | `deck.blank()` | the empty slide between references and appendix |
 | `deck.disclosure(lines, heading="利益相反の開示", sec=10)` | a disclosure the event requires (the COI statement many 学会 ask for), directly after the cover, in the event's wording. Counted in the time, not in the slide budget; no message, no figure |
 | `deck.appendix(heading, message, *body, …)` | an appendix slide; same arguments as `slide`. A slide that answers a question in words (criteria, reasons) may be `text_only=True` |
@@ -617,7 +632,7 @@ deck.slide(
 | Component | What it is |
 |---|---|
 | `samples(sample(path, value, note, tone=), …, caption=, tight=, small=, stack=)` | real images side by side, each with its value; fills the free height |
-| `fig(path, fill=True, caption=, shot=)` | one raster image filling the free height (`width=` px instead of `fill` for a fixed size); an SVG is placed at its own size |
+| `fig(path, fill=True, caption=, shot=, ring=)` | one raster image filling the free height (`width=` px instead of `fill` for a fixed size); an SVG is placed at its own size. `ring=(left, top, right, bottom)` in the image's pixels draws one red ellipse over a chart taken from a paper |
 | `bars(data, hot=, highlight=, light=, axis_max=, title=, signed=, ends=)` | horizontal bars with values; fills the free height (up to 50 px per bar). `ends=("…", "…")` names the two directions of signed bars |
 | `vbars(data, hot=, highlight=, light=, axis_max=, title=)` | vertical bars with values on top (2–7); fills the free height. Two bars alone get wider columns |
 | `shares(rows, parts=, title=, hot=, highlight=, unit="%")` | bars that each run to 100%, split into named parts: `rows=[(whole, [values…]), …]`, `parts=[names…]`, `title=` what 100% is (required). Every row has the same parts; fills the free height |
@@ -770,3 +785,9 @@ of text, a card, or a label-and-explanation list — that is the thing this skil
 | a hand, a phone, a camera drawn from rectangles and balloons | — | `scripts/icons.mjs search …`, `get`, `sk.icon` |
 | a line ending in 〜ず | lint D6 | 〜ない, or a noun ending |
 | a long heading | `DeckError: heading … is too long` | the heading is a label; move the content to the message |
+| others' methods named on the slides, nothing cited | lint C1 | the citation mark where each first appears; the reference copied from the material |
+| a reference written from memory because the material has none | (never) | search the material by the name, DOI, arXiv, `.bib`; if it is not there, `sk.missing_ref("…")` and tell the user |
+| the base method's name on every slide, never explained | (the audience) | a few words woven in where it first appears: 「〜を数える **MCI** で区間を評価」 |
+| math in a heading (`"結果 - $R^2$"`) | `DeckError: heading … contains math` | name the part in words; the symbol goes in the message or a bullet |
+| a paper's figure under the message, nothing else | lint F9 (info) | `ring=` on the place it is about, and a line or two that read it |
+| a figure cropped by hand with coordinates guessed in a script | — | `scripts/figpanels.py --preview`, then `--crop` / `--box` |

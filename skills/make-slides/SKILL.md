@@ -129,7 +129,8 @@ and opens anywhere. The canvas has PowerPoint's physical size (16:9 = 13.333 × 
 │   ├── init.mjs        creates a deck directory
 │   ├── lint.mjs        runs deck.py, then measures the rendered deck
 │   ├── build.mjs       runs deck.py, then writes the PDF, PNGs, contact sheets, speaker notes
-│   └── icons.mjs       finds and fetches icons (people, hands, a phone, a camera …) from open-source sets
+│   ├── icons.mjs       finds and fetches icons (people, hands, a phone, a camera …) from open-source sets
+│   └── figpanels.py    finds the panels of a figure and cuts out the ones a slide needs (Python, Pillow)
 └── assets/
     ├── slidekit.py     the slide library (copied into each deck; never edited)
     ├── theme/          slide.css, ratio files, fonts, KaTeX (copied into each deck; never edited)
@@ -182,7 +183,7 @@ Establish these before designing anything:
 | Occasion and formality | Assume a formal talk with a question session. |
 | Aspect ratio | 16:9. Use 4:3 only when asked or when the venue is known to be 4:3. |
 | Language | The language of the material and the request. |
-| Structure after the main part | 参考文献 → one blank slide → 補足 (appendix), when the material has citations or the talk has a question session. |
+| Structure after the main part | 参考文献 → one blank slide → 補足 (appendix). The reference slide whenever the slides name someone else's work — a method, a model, a dataset, a measure — which is nearly always; the blank slide and the appendix when the talk has a question session. |
 | Disclosure (利益相反・COI) | Only when the event requires one (many 学会 do): right after the cover, with `deck.disclosure([...])` in the event's own wording. If the requirement is unknown, leave it out and say so in the report. |
 | Presenter name, affiliation | Take them from the material. If it is unclear whether personal identifiers may appear, use placeholders (氏名 etc.) and say so. |
 | Date, name of the event | Take them from the request or the material. If they are not given, leave them out — no placeholder date in the footer — and say so in the report. |
@@ -215,19 +216,24 @@ Write `<deck-dir>/outline.md`:
 1. the audience in one line, and what they already know;
 2. the one sentence the audience should remember tomorrow;
 3. the slide budget from the talk length (table in story.md — about one main slide per minute
-   including the cover);
+   including the cover). The table is a middle, not a cap: an audience without the background the
+   talk rests on, conditions that decide how the results read, or a material with many figures
+   worth showing call for its upper end (story.md §3);
 4. one row per slide: number, **heading** (the part of the talk: 研究背景 / 方法 - 実験 / 結果 - 精度),
    **message** (one short noun-ending claim), **the figure** (what picture — which image from the
    material, which chart of which data, which diagram — and *what in it the audience should look
    at*), the words on the slide (at most three bullets, each a full line, or one conclusion line),
    seconds, and what will be *said* (this becomes `notes=`);
 5. the topics of each part side by side (結果: 精度 / 速度 / 頑健性), read as a set: they name the
-   same kind of thing, at one level (story.md §4).
+   same kind of thing, at one level (story.md §4);
+6. the terms the talk is built on — the method this work extends, a name that returns on later
+   slides, the measure the results are in — and the slide where each is first glossed (story.md §1).
 
 Decide the figure of each slide **before** its words, from what *this* material can show — not
 from the gallery. A slide whose row has no figure is not yet designed; only the purpose slide and
 the summary are text-only. If a part of the talk cannot be shown in one picture, give it more
-slides — the method of a study never fits on one.
+slides — the method of a study never fits on one: each part the work changes or adds gets a slide
+of its own.
 
 Show the outline to the user. Whether to wait for approval follows their standing instructions and
 how they phrased the request; if they said to go ahead, go ahead.
@@ -250,7 +256,10 @@ theme. Then, for each row of the outline:
   in `<deck-dir>/prepare.py` so it can be re-run.
 - **A figure of a paper**: when its data is in the material, redraw it at slide size with its point
   marked; when only the picture exists, show the picture (cropped to the panels the slide needs)
-  rather than reading values off it.
+  rather than reading values off it. `python "<skill-dir>/scripts/figpanels.py" <image> --preview
+  figures/_panels.png` finds the panels along the white gutters and numbers them; look at the
+  preview, then cut out the ones the slide needs (`--crop 2,3`, `--box …`, `--arrange row|col`).
+  Which panel is needed is your judgement; the cutting is the script's.
 - **Data** becomes a chart in `deck.py`: `sk.bars()` / `sk.vbars()` for values to compare,
   `sk.shares()` for the shares of a whole (bars that run to 100%, every part named), matplotlib
   through `sk.new_fig()` / `sk.save_fig()` for trends, scatters and distributions (`sk.bar_values()`
@@ -270,6 +279,11 @@ theme. Then, for each row of the outline:
   from `sk.icon_point(…)`. Draw by hand only what no set has, and only if it comes out
   recognisable — otherwise choose another figure (figures.md §9).
 - **A definition** becomes `sk.math()` together with one worked example on real data.
+- **References.** List every work the slides will name — methods, models, datasets, measures,
+  software — and find each one's reference in the material: its reference list, `.bib` files,
+  footnotes, a README, comments in the code, a DOI, an arXiv number, a URL. Search all of it by the
+  name. A reference is copied from the material, never written from memory; one that is nowhere in
+  the material is entered as `sk.missing_ref("<the name>")` (rule 20).
 - Start `<deck-dir>/numbers.md`: one row for every number that will appear on a slide — the value
   as printed, what it means, the source file and place, the slide. Never put a number on a slide
   that is not in this ledger. You verify it in Phase 7.
@@ -327,6 +341,8 @@ component is misused — read the message; it says what to write instead.
 **Read `references/lint-rules.md` the first time a rule appears that you do not know how to fix.**
 
 - Fix every `ERROR`, then every `WARN`. `info` lines are judgement calls; read them.
+- One warning is not yours to clear: C2, a reference the material does not give. Never make it go
+  away by writing the reference from memory; it stays until the user supplies the reference.
 - Fix the cause in the content. The fix for "too much" is always to cut and move the cut to
   `notes=` — never a smaller size, never hand-written HTML or CSS, never editing `slidekit.py`,
   `theme/` or `deck.html`.
@@ -366,7 +382,8 @@ Follow the second half of `references/qa.md`:
   the ledger;
 - check terms: one name for one thing through the whole deck; every abbreviation either used at
   least twice and introduced, or spelled out;
-- check that each citation mark has an entry on the reference slide, and the reverse;
+- check that each citation mark has an entry on the reference slide, and the reverse, and that
+  every entry was copied from the material (one that is not there is a `missing_ref`);
 - check `notes=` on each main slide: it holds everything the slide leaves out — what each number
   means and how good it is, the conditions, the reasons. The slide shows; the speaker explains.
 
@@ -375,7 +392,8 @@ Follow the second half of `references/qa.md`:
 Report to the user in their language with the template in `references/qa.md`: where the PDF is,
 the slide list with time per slide, the assumptions you made in Phase 1, the number check table,
 the files you read, lint status including any silenced rule, and what you could not verify. State
-plainly anything that is unfinished. If you wrote a helper that another deck could use — a
+plainly anything that is unfinished. A reference entered with `missing_ref` is named first, above
+everything else, so that the user supplies it before the talk. If you wrote a helper that another deck could use — a
 function in `deck.py` or `prepare.py` that is not about this material — name it in the report:
 it may belong in slidekit or in `scripts/`.
 
@@ -393,6 +411,12 @@ room should still get the point of each slide from its message and figure; they 
 argument. When a slide feels incomplete without another sentence, that sentence belongs in the
 notes. Nor does the slide mention what it leaves out (「エラーバーは省略」「詳細は割愛」): nobody
 reading it misses what is not there.
+
+Few words is not the same as too few. The audience must be able to follow every slide: a figure
+whose point is not seen at a glance gets the line that reads it (rule 3), and a term the talk
+rests on is glossed where it first appears (rule 19). Cutting those does not make the slide
+cleaner, it makes it unreadable — and a speaker cannot repair, in the seconds a slide is up, a
+figure the audience did not understand.
 
 **2. The heading names the part of the talk; the message is one short claim.**
 The heading is large and is only a label: 「研究背景」「先行研究」「目的」「提案手法 - 全体像」
@@ -452,9 +476,17 @@ it, write down the one thing it must show; then mark that thing, so it is seen a
 - a direct label at the decisive place (「差 12ポイント」 beside the gap, the value at the end of
   the line);
 - when none of these leads the eye there, one ring around it (`sk.ring` in a plot, an
-  `<ellipse class="ln-hot">` in a diagram). It is drawn into the figure; nothing appears later.
+  `<ellipse class="ln-hot">` in a diagram, `sk.fig(…, ring=…)` on a chart taken from a paper). It
+  is drawn into the figure; nothing appears later.
 
 Use one or two of these, not all. The linter warns about a chart that has none (F5).
+
+**A figure taken from a paper needs the most help**, because it was drawn for readers with time
+— small type, several panels, English labels — not for an audience with seconds. Ring the place
+the slide is about on it (`ring=`) and give it a line or two that read it (「雨天の画像の線だけが幅1mm未満
+で急に下がる」). Do not drop those lines to make the figure larger: a dense original with only the
+message above it leaves the audience to find the point alone (lint F9). Crop it to the panels the
+slide needs first (`scripts/figpanels.py`).
 
 And a figure is there because the point needs it — *that* figure, not any figure. A second figure
 added to fill a column or an empty corner (a rating scale drawn out, a picture of a word) is
@@ -635,7 +667,11 @@ leave the audience asking what is wrong with them, even when the figure shows it
 
 **14. The method takes several slides, and is shown with concrete examples.**
 One overview (a flow), then the key steps one per slide, each on a real example: the actual image,
-the value computed from it, the formula. A slide that only describes the dataset is not a method
+the value computed from it, the formula. Each part the work changes or adds gets its own slide —
+what was done for the detection, what for the ranking; an overview whose boxes are those parts
+says nothing about what was done to each. When a second step was designed in answer to a first
+result, let the talk follow the work: 提案手法 - 検出 → 結果 - 検出 → 提案手法 - 順位付け →
+結果 - 順位付け (the method and the results may alternate; lint K3 allows it). A slide that only describes the dataset is not a method
 slide; the dataset is one bullet (「120区間・約1万2千枚の路面画像」). For an experiment, the method
 is shown as what happened: the setting drawn (who sat where, what they saw — people drawn as
 people), the stimulus or the questionnaire item as the subject saw it, what was measured on one real
@@ -682,12 +718,26 @@ writes 実験参加者. An experiment is a study in which people do a task under
 researcher sets. In a clinical or field study — patients, residents or users who receive a care
 or a service — keep the field's own word (対象者, 患者, 利用者), as the material writes it.
 
+A term the talk is built on — the method this work extends, a name that returns on later slides,
+the measure the results are in — is glossed on the slide where it first appears, in a few words
+woven into the line: 「ひび割れと補修跡を区別して数える **MCI** で区間を評価」. Not a row
+「**MCI**：…」: the label-and-explanation form is for the rare slide whose job is to define a few
+terms (the measures of an evaluation), and there D5 is silenced with that reason. Every other
+term is glossed aloud.
+
 **20. Nothing invented.**
 Every number, name and claim comes from the material and is recorded in `numbers.md`. Do not add
 "illustrative" facts or examples that are not in the source. If the material does not support a
 claim the story needs, tell the user instead of filling the gap. A schematic of what a hypothesis
 predicts may be drawn — labelled as a prediction, with no numbers on it. Values read off a
 published figure are estimates, not data: do not print them (figures.md §1).
+
+The same holds for references. Every method, model, dataset or measure from someone else's work
+is cited where it first appears, and its reference is copied from the material — never recalled:
+an author list, a title or a year written from memory is how a fabricated citation gets into a
+talk. Search the whole material for it first (Phase 3). A reference that is nowhere in the material
+is entered as `sk.missing_ref("<the name>")`: it stays red on the reference slide, saving the deck
+and lint warn about it (C2), and the report names it first, so that the user supplies it.
 
 **21. A pattern is chosen for the content; nothing is copied from the examples.**
 The gallery and the examples in the references show how to *call* each component. They are not

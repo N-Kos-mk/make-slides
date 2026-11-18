@@ -131,6 +131,8 @@ function lintInPage(cfg) {
   const headBottoms = [];
   const headings = new Map();
   const abbr = new Map();   // token -> [{slide, el}]
+  const names = new Map();  // a name that looks like a method or a model -> { slides: [], cited }
+  let anyCite = false;
   const sections = [];
   const topics = new Map();   // part -> [topic, …] in slide order
   let mainCount = 0, textOnlyCount = 0, boxedSlides = 0;
@@ -209,6 +211,17 @@ function lintInPage(cfg) {
     // F7: a plot whose two axes are both lists of names, with marks at the crossings (slidekit marks it)
     for (const pf of body ? body.querySelectorAll('figure[data-catgrid]') : []) {
       add('warn', no, 'F7', 'both axes of this plot are lists of names (groups, kinds, methods) with marks at their crossings; a place on it means nothing — the rows could be swapped — so the grid only pretends to measure. Show what really differs: an amount on its own axis with its values, a time on a time axis, two settings as pictures side by side — or say it in two bullets', pf);
+    }
+
+    // F9: an image (a paper's figure, a photo) with no words beside it and no ring: what is the audience to read in it?
+    if (role === 'main' && !textOnly && body && figs.length) {
+      const rasterOnly = figs.every((f) => f.matches('.fig') && !f.matches('[data-plot]') && f.querySelector('img')
+        && !/\.svg(\?|#|$)/i.test(f.querySelector('img').getAttribute('src') || ''));
+      const words = body.querySelector('.points, .conclusion, .summary');
+      const ringed = figs.some((f) => f.matches('.ringed'));
+      if (rasterOnly && !words && !ringed) {
+        add('info', no, 'F9', "the slide shows an image with only the message to read it by. When it is a figure of data (a paper's chart) the audience has to find the point alone: add one ring on it (fig(..., ring=(l, t, r, b))) and a line or two that read it; a photograph that speaks for itself may stay as it is", figs[0]);
+      }
     }
 
     // F8: every position map is a judgement call — the slide must need it
@@ -488,6 +501,26 @@ function lintInPage(cfg) {
         if (labelled.length >= 2) add('warn', no, 'D5', `${labelled.length} bullets of the form 「見出し語：説明」 (e.g. 「〇〇の理由：…」); this label-and-explanation pattern reads as machine-made — state the point itself`, labelled[0]);
       }
     }
+    if (role === 'main') {
+      // names written like methods and models (CamelCase, ++, hyphenated capitals): someone else's, unless this work's own
+      // a whole Latin word with its hyphens and a trailing ++, kept when it is written like a name
+      const NAME = /(?<![A-Za-z0-9])[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*(?:\+\+)?(?![A-Za-z0-9+])/g;
+      const named = (w) => /\+\+$/.test(w) || /[a-z][A-Z]/.test(w) || /^[A-Z][A-Za-z0-9]*-[A-Z]/.test(w);
+      const knownNames = new Set(['PowerPoint', 'JavaScript', 'TypeScript', 'GitHub', 'YouTube', 'iPhone', 'iPad', 'macOS', 'iOS', 'LaTeX', 'PyTorch', 'TensorFlow', 'NumPy', 'OpenAI', 'ChatGPT', 'PhD', 'McDonald']
+        .concat((document.documentElement.dataset.knownAbbr || '').split(/[\s,]+/).filter(Boolean)));
+      const citedHere = !!slide.querySelector(':scope > .msg .ref, :scope > .body .ref');
+      if (citedHere) anyCite = true;
+      for (const n of tnodes) {
+        if (n.parentElement.closest('.refs, .source, .ref, .notes, .katex')) continue;
+        for (const m of n.nodeValue.matchAll(NAME)) {
+          if (!named(m[0]) || knownNames.has(m[0])) continue;
+          if (!names.has(m[0])) names.set(m[0], { slides: [], cited: false });
+          const e = names.get(m[0]);
+          if (!e.slides.includes(no)) e.slides.push(no);
+          if (citedHere) e.cited = true;
+        }
+      }
+    }
     if (role === 'main' || role === 'cover') {
       const known = new Set(['AI', 'IT', 'PC', 'ID', 'URL', 'OK', 'NG', 'UI', 'OS', 'CPU', 'GPU', 'PDF', 'HTML', 'CSS', 'API', 'SNS', 'QA', 'FAQ', 'USB', 'TV', 'DVD', 'GPS', 'ICT', 'LAN', 'VS', 'JPEG', 'PNG'
       ].concat((document.documentElement.dataset.knownAbbr || '').split(/[\s,]+/).filter(Boolean)));
@@ -495,6 +528,8 @@ function lintInPage(cfg) {
         if (n.parentElement.closest('.refs, .source, .ref, svg')) continue;
         for (const m of n.nodeValue.matchAll(/(?<![A-Za-z0-9])[A-Z][A-Z0-9]{1,5}(?![A-Za-z0-9])/g)) {
           if (known.has(m[0])) continue;
+          // a Roman numeral (第II期) or a name with a digit (a formula such as CO2, a model number) is not an abbreviation to spell out
+          if (/^(?:I{2,3}|IV|VI{0,3}|IX|XI{0,3})$/.test(m[0]) || /\d/.test(m[0])) continue;
           if (!abbr.has(m[0])) abbr.set(m[0], []);
           abbr.get(m[0]).push({ no, el: n.parentElement });
         }
@@ -541,7 +576,7 @@ function lintInPage(cfg) {
       const iv = [];
       const push = (r) => { const t = Math.max(r.top, br.top), b = Math.min(r.bottom, br.bottom); if (b - t > 1) iv.push([t, b]); };
       for (const b of blockInfo) if (body.contains(b.el)) push(b.u);
-      for (const el of body.querySelectorAll('img, svg, table, .bar-track i, .vbar-plot i, .shares, .thing, .boxed')) if (visible(el)) push(el.getBoundingClientRect());
+      for (const el of body.querySelectorAll('img, svg, table, .bar-track i, .vbar-plot i, .shares, .thing, .boxed, .math-block')) if (visible(el)) push(el.getBoundingClientRect());
       let covered = 0, maxGap = 0;
       if (iv.length) {
         iv.sort((a, b) => a[0] - b[0]);
@@ -553,7 +588,7 @@ function lintInPage(cfg) {
       // share of the body area taken by figures
       let figArea = 0;
       for (const f of figs) {
-        const parts = f.matches('.math-block') ? [f] : [...f.querySelectorAll('img, svg, .bars, .vbars, .shares')].filter(visible);
+        const parts = f.matches('.math-block') ? [f] : [...f.querySelectorAll('img, svg:not(.fig-ring), .bars, .vbars, .shares')].filter(visible);
         const boxes = f.matches('.flow') ? [f] : (parts.length ? parts : [f]);
         for (const p of boxes) { const r = p.getBoundingClientRect(); figArea += r.width * r.height; }
       }
@@ -640,6 +675,7 @@ function lintInPage(cfg) {
       const natural = img.naturalWidth / img.naturalHeight;
       if (fit === 'fill' && Math.abs(r.width / r.height - natural) / natural > 0.02) add('error', no, 'I3', 'image is stretched (aspect ratio changed); set only width OR height', img);
       const scale = r.width / img.naturalWidth;
+      if (!isSvg) metrics[no] = Object.assign(metrics[no] || {}, { img: Math.min(scale, (metrics[no] || {}).img ?? Infinity) });
       if (isSvg) {
         if (Math.abs(scale - 1) > 0.03) add('warn', no, 'I4', `SVG figure is shown at ${scale.toFixed(2)}x; text inside it is scaled too — regenerate the figure at its display size`, img);
       } else if (img.naturalWidth / r.width < 1.3) {
@@ -706,13 +742,37 @@ function lintInPage(cfg) {
   // the parts of the talk must be contiguous
   const seen = new Set();
   let prev = null;
-  for (const k of sections) { if (k !== prev && seen.has(k)) { deck('warn', 'K3', `the part "${k}" resumes after another part; keep the slides of one part together`); break; } seen.add(k); prev = k; }
+  // the method and the results may alternate when a second method answers a first result
+  const STEPWISE = /方法|手法|実験|評価|検証|結果|Method|Result|Experiment/;
+  for (let i = 0; i < sections.length; i++) {
+    const k = sections[i];
+    if (k === prev || !seen.has(k)) { seen.add(k); prev = k; continue; }
+    const last = sections.lastIndexOf(k, i - 1);
+    const between = sections.slice(last + 1, i);
+    if (STEPWISE.test(k) && between.every((b) => STEPWISE.test(b))) { prev = k; continue; }
+    deck('warn', 'K3', `the part "${k}" resumes after another part; keep the slides of one part together (only the method and the results may alternate: 手法 - A → 結果 - A → 手法 - B → 結果 - B)`);
+    break;
+  }
   for (const [part, ts] of topics) {
     if (new Set(ts).size < 2) continue;
     const kind = /方法|手法|実験|手順|設計/.test(part)
       ? 'the stages of the procedure that a listener follows, all of one kind (装置 / 手順 / 測定 / 分析, or 全体像 / 検出 / 優先度の計算)'
       : 'the kind of analysis or measure (精度 / 速度 / 頑健性)';
     deck('info', 'S10', `topics of 「${part}」: ${[...new Set(ts)].join(' / ')} — check that they name the same kind of thing at one level — ${kind} — not items of content (story.md §4)`);
+  }
+  // C1: names of others' methods and models must be cited; C2: references the material does not give
+  if (names.size) {
+    const all = [...names.keys()];
+    const uncited = [...names].filter(([, e]) => !e.cited).map(([k, e]) => `${k} (p.${e.slides[0]})`);
+    if (!anyCite) {
+      deck('warn', 'C1', `names of methods or models appear on the main slides (${all.slice(0, 8).join(', ')}${all.length > 8 ? ', …' : ''}) but nothing is cited. Cite each one that is someone else's where it first appears, with its reference taken from the material (its reference list, a .bib, footnotes, a README, a DOI); one the material does not give is entered as sk.missing_ref("…"), never written from memory`);
+    } else if (uncited.length) {
+      deck('info', 'C1', `named on the main slides but never on a slide with a citation mark: ${uncited.slice(0, 8).join(', ')}${uncited.length > 8 ? ', …' : ''}. Someone else's method, model, dataset or measure is cited where it first appears (reference from the material, or sk.missing_ref); this work's own names need none`);
+    }
+  }
+  const missingRefs = [...document.querySelectorAll('.refs li.ref-missing')].map((li) => li.textContent.split(' — ')[0].trim());
+  if (missingRefs.length) {
+    deck('warn', 'C2', `${missingRefs.length} reference(s) NOT FOUND in the material: ${missingRefs.join(', ')}. This warning is not yours to clear: do not write these references from memory. Search the material once more; if they are not there, ask the user, and list them first in the report`);
   }
   if (mainCount >= 4 && textOnlyCount > Math.max(2, Math.round(mainCount * 0.25))) deck('warn', 'F3', `${textOnlyCount} of ${mainCount} main slides are text-only; words alone do not reach the audience — keep text-only for 目的 and まとめ`);
   if (boxedSlides > 2) deck('warn', 'W3', `${boxedSlides} slides carry a boxed statement; the frame is for the one statement of the talk (the purpose)`);
@@ -815,13 +875,13 @@ const main = async () => {
         console.log(`    ${tag[f.sev]} ${f.rule.padEnd(3)} ${f.msg}${f.where ? `\n              ← ${f.where}` : ''}`);
       }
       if (args.metrics) {
-        console.log('\n  metrics   (fig = share of the body area taken by figures; fill = share of the body height that carries content;\n             cx = how far the weight of the slide sits from the centre line, in % of the width, − = left; text = running text)');
+        console.log('\n  metrics   (fig = share of the body area taken by figures; fill = share of the body height that carries content;\n             cx = how far the weight of the slide sits from the centre line, in % of the width, − = left; text = running text;\n             img = the scale a raster image is drawn at: text 30 px tall in the image shows 30 x img px tall, want 19 px or more)');
         for (const sl of info.slides) {
           const m = res.metrics[sl.n];
           if (!m || sl.role === 'cover') continue;
           const pc = (v) => (v == null ? '  -' : String(v).padStart(3));
           const cx = m.cx == null ? '  -' : `${m.cx > 0 ? '+' : m.cx < 0 ? '−' : ' '}${String(Math.abs(m.cx)).padStart(2)}`;
-          console.log(`    p.${String(sl.n).padEnd(3)} fig ${pc(m.fig)}% | fill ${pc(m.fill)}% | cx ${cx}% | text ${String(m.chars).padStart(3)} chars | message ${String(m.msgChars).padStart(2)} chars${sl.sec ? ` | ${sl.sec}s` : ''}  ${sl.title.slice(0, 22)}`);
+          console.log(`    p.${String(sl.n).padEnd(3)} fig ${pc(m.fig)}% | fill ${pc(m.fill)}% | cx ${cx}% | text ${String(m.chars).padStart(3)} chars | message ${String(m.msgChars).padStart(2)} chars${sl.sec ? ` | ${sl.sec}s` : ''}${m.img != null && Number.isFinite(m.img) ? ` | img x${m.img.toFixed(2)}` : ''}  ${sl.title.slice(0, 22)}`);
         }
       }
       console.log(`\n  summary: ${summary.errors} error(s), ${summary.warnings} warning(s), ${summary.info} info${summary.suppressed ? `, ${summary.suppressed} suppressed` : ''}`);

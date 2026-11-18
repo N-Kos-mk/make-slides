@@ -38,7 +38,7 @@ import struct
 import sys
 from pathlib import Path
 
-__version__ = "2.4"
+__version__ = "2.5"
 
 HERE = Path(__file__).resolve().parent
 try:
@@ -394,7 +394,7 @@ def _need_file(src, who: str) -> Path:
     return path
 
 
-def fig(src, *, width=None, fill: bool = False, caption=None, alt: str = "", shot: bool = False) -> H:
+def fig(src, *, width=None, fill: bool = False, caption=None, alt: str = "", shot: bool = False, ring=None) -> H:
     """An image file (path relative to the deck directory), centred.
 
     SVG figures made with new_fig()/save_fig() are placed at their own size — do not pass width;
@@ -402,6 +402,11 @@ def fig(src, *, width=None, fill: bool = False, caption=None, alt: str = "", sho
     Photos and screenshots: fill=True lets the image take all the height the slide has left
     (the usual choice), or pass width in px. shot=True draws a hairline around a screenshot.
     caption: one short line under the image; leave it out when the message already says it.
+    ring:    (left, top, right, bottom) in the image's own pixels — one red ellipse drawn over the
+             figure around that box: the place a chart taken from a paper is about (the line that
+             drops, the gap between two curves). Measure the box on the image
+             (scripts/figpanels.py prints the size; open the image to find the place). One per
+             figure, and only on a figure of data — a photograph is pointed at by cropping.
     """
     path = _need_file(src, "fig()")
     size = _image_size(path)
@@ -427,6 +432,26 @@ def fig(src, *, width=None, fill: bool = False, caption=None, alt: str = "", sho
         attrs = f' width="{int(width)}"'
     img = f'<img{" class=" + chr(34) + "shot" + chr(34) if shot else ""} src="{_src(src)}"{attrs} alt="{_html.escape(alt)}">'
     cap = f"\n  <figcaption>{inline(caption)}</figcaption>" if caption else ""
+    if ring is not None:
+        if size is None:
+            _err(f"fig(): cannot read the size of {src} to place the ring")
+        if not (isinstance(ring, (list, tuple)) and len(ring) == 4):
+            _err("fig(): ring=(left, top, right, bottom) in the image's own pixels")
+        l, t, r, b = (float(v) for v in ring)
+        iw, ih = size
+        if not (0 <= l < r <= iw and 0 <= t < b <= ih):
+            _err(f"fig(): ring {ring} is not a box inside the image ({iw:.0f}×{ih:.0f} px)")
+        # an ellipse that passes just outside the corners of the box (semi-axes ≈ half-sides × √2),
+        # kept inside the image so that it never runs off the figure
+        cx, cy = (l + r) / 2 / iw * 100, (t + b) / 2 / ih * 100
+        rx = builtins.min((r - l) / 2 * 1.42 / iw * 100, cx - 0.5, 99.5 - cx)
+        ry = builtins.min((b - t) / 2 * 1.42 / ih * 100, cy - 0.5, 99.5 - cy)
+        mark = (f'<svg class="fig-ring" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
+                f'<ellipse cx="{cx:.2f}" cy="{cy:.2f}" rx="{rx:.2f}" ry="{ry:.2f}"/></svg>')
+        frame = f'<span class="fig-frame">{img}{mark}</span>'
+        if fill:
+            frame = f'<div class="fig-box">{frame}</div>'
+        return H(f'<figure class="{_cls("fig", "fill" if fill else "", "ringed")}" data-marked="1">\n  {frame}{cap}\n</figure>')
     return H(f'<figure class="{_cls("fig", "fill" if fill else "")}">\n  {img}{cap}\n</figure>')
 
 
@@ -1163,6 +1188,33 @@ def cols(ratio: str, *columns) -> H:
 # --------------------------------------------------------------------------------------------
 # deck
 # --------------------------------------------------------------------------------------------
+class _MissingRef(str):
+    """A reference the slides need that the material does not give (see missing_ref)."""
+
+
+_MISSING_REFS: list = []
+
+
+def missing_ref(name: str) -> _MissingRef:
+    """An entry for deck.refs() that marks a reference NOT FOUND in the material.
+
+    Every method, model, dataset or measure the slides name from someone else's work is cited. Its
+    reference comes from the material: the paper's reference list, a .bib file, footnotes, a README,
+    comments in the code, a DOI or a URL. Search all of the material for the name first. Only when
+    it is nowhere, enter it as missing_ref("<the name as the slides write it>"): the reference slide
+    shows it in red as 「出典未確認」, saving the deck warns, lint reports it, and the report lists it
+    first so the user can supply it.
+
+    Never write a reference from memory instead — an author list, a title or a year recalled
+    rather than read is how a fabricated citation gets into a talk.
+    """
+    if not isinstance(name, str) or not name.strip():
+        _err("missing_ref(): give the name as the slides write it, e.g. missing_ref('RoadSeg++')")
+    if name not in _MISSING_REFS:
+        _MISSING_REFS.append(name)
+    return _MissingRef(name.strip())
+
+
 _FIGURE_MARK = re.compile(r'class="(fig|samples-wrap|chart|flow|math-block|tbl|therefore)\b|<svg class="dia"')
 _SEP = re.compile(r"\s*[-‐–—－―]\s*")
 
@@ -1254,6 +1306,10 @@ class Deck:
                  '    deck.slide("研究背景", "細いひび割れほど見落とし", sk.samples(...), sk.points([...]))')
         heading = _SEP.sub(" - ", heading.strip()) if re.search(r"\S\s+[-‐–—－―]\s+\S|[–—－―]", heading) else heading.strip()
         head_max = self.content_w / (_PX["head"] * 1.0) - 0.5
+        if "$" in heading:
+            _err(f"slide(): heading {heading!r} contains math ($…$). Math changes the height of the heading and moves its "
+                 "rule on this slide only. The heading is a label: name the part in words (「結果 - 精度」) and put "
+                 "the symbol in the message or a bullet")
         if "\n" in heading or _units(heading) > head_max:
             _err(f"slide(): heading {heading!r} is too long (one line holds about {head_max:.0f} characters). "
                  "The heading only names the part of the talk; what the slide says goes to the message")
@@ -1312,6 +1368,8 @@ class Deck:
         not fit on one slide it continues on further slides (「参考文献(1)」「参考文献(2)」) with the
         numbers running on: the split is estimated from the length of each entry, or set it with
         per_slide=N.
+        Every entry is taken from the material. A work the slides name but the material does not
+        describe is entered as missing_ref("…") — never written from memory.
         """
         items = list(items)
         if per_slide:
@@ -1336,6 +1394,10 @@ class Deck:
             lis = []
             for it in chunk:
                 s = _html.escape(str(it), quote=False)
+                if isinstance(it, _MissingRef):
+                    note = "出典未確認（資料に文献情報なし）" if self.lang == "ja" else "source not found in the material"
+                    lis.append(f'      <li class="ref-missing">{s} — {note}</li>')
+                    continue
                 s = re.sub(r"\*(.+?)\*", lambda m: m.group(1) if _JA.search(m.group(1)) else f"<i>{m.group(1)}</i>", s)
                 lis.append(f"      <li>{s}</li>")
             head = heading if len(chunks) == 1 else f"{heading}({k + 1})"
@@ -1412,6 +1474,12 @@ class Deck:
         print(line)
         for w in _WARNINGS:
             print(f"slidekit: warning: {w}", file=sys.stderr)
+        if _MISSING_REFS:
+            bar = "!" * 78
+            print(f"\n{bar}\nslidekit: {len(_MISSING_REFS)} reference(s) NOT FOUND in the material: "
+                  f"{', '.join(_MISSING_REFS)}\n  The reference slide shows them in red as 「出典未確認」. Do NOT write them "
+                  "from memory.\n  Search the material once more (the name, 'et al.', DOI, arXiv, .bib); if they are not "
+                  "there, ask the user,\n  and list them FIRST in the report.\n" + bar, file=sys.stderr)
         return out
 
 

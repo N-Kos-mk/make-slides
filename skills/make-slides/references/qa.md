@@ -26,7 +26,7 @@ Output in `<deck-dir>/out/`:
 
 | File | What it is |
 |---|---|
-| `<deck-name>.pdf` | the deliverable |
+| `<deck-name>.pdf` | the deliverable (named after the deck directory: a deck in `deck/` gives `deck.pdf`) |
 | `sheet-1.png`, `sheet-2.png`, … | contact sheets: every slide side by side, numbered |
 | `png/01.png`, … | one image per slide at slide resolution |
 | `notes.md` | speaker notes collected from `notes=` |
@@ -141,6 +141,10 @@ Open the full-size image for slides with plots or diagrams, and for anything sus
   part is, in words the audience knows? Are two shares of different wholes stacked as if they
   were one comparison?
 - **Error bars**: no value sits on a whisker (`sk.bar_values`).
+- **Figures taken from a paper**: is each one read for the audience — the place ringed, a line or
+  two that say what to see — or does it stand under the message alone (F9)? Is its type readable
+  at the scale it is drawn (`img ×` in `--metrics` × the height of its smallest text in the image
+  ≥ 19 px)? When not, crop tighter.
 - **Shapes in diagrams**: people drawn as people, things with a shape as that shape — not
   labelled circles.
 - **Diagrams and flows**: text inside its box with margin; equal gaps between equal things;
@@ -234,6 +238,13 @@ report the disagreement instead of choosing.
 If the user said that exact verification is out of scope for this run, still produce the ledger
 and mark the rows as 未照合, so the work that remains is visible.
 
+When one source disagrees with itself — a total in a figure that does not match the text because
+the two count from different points, a value rounded differently in a table and in the abstract —
+do not pick one silently and do not print a number that mixes the two. Use one of them
+consistently (the one the slide's comparison is built on), leave out the aggregate that would
+contradict the other, say in the notes which one you used and why, and list it under 未了・要確認
+in the report.
+
 ## 6. Verifying words, citations and structure
 
 - **Terms**: list the technical terms on the slides. One name per thing; fix any slide that uses
@@ -245,6 +256,12 @@ and mark the rows as 未照合, so the work that remains is visible.
   appears, including in the appendix.
 - **Names**: the name given to each prior approach distinguishes it from this work; no category
   name also describes this work.
+- **Citations**: every method, model, dataset or measure from someone else's work carries a citation
+  mark where it first appears (lint C1), and for every entry on the reference slide you can point
+  at the place in the material it was copied from. One you cannot is a `missing_ref`, not a
+  recollection.
+- **Terms**: each term the talk is built on is glossed, in a few words inside the line, on the
+  slide where it first appears.
 - **Examples**: the real examples shown were chosen from the data by a stated rule (highest /
   lowest, the extremes of a quantity), and the values printed under them match the data.
 - **Comparisons**: no ranking between results measured under different conditions; where they
@@ -280,6 +297,10 @@ Report in the user's language. Lead with where the result is; keep it factual. T
 (Japanese):
 
 ```markdown
+（資料で出典を確認できなかった文献があるときは、ほかのすべてより先にこの節を書く）
+## 要確認: 資料で出典を確認できなかった文献
+- RoadSeg++（p.4・p.6 で使用）: 資料のどこにも文献情報がない。原論文の情報をください
+
 発表スライドを作成しました。
 
 - PDF: <deck-dir>/out/<deck-name>.pdf（本編 N 枚＋参考文献・空白・補足 M 枚）

@@ -66,9 +66,14 @@ there too.
 - **The data is in the material** (a table, a CSV, the numbers in the text): redraw the figure at
   slide size in the theme — legible type, the subject coloured, the point marked. Cite the paper.
 - **Only the picture exists**: show the picture (`sk.fig(…, fill=True)`), cropped to the panels the
-  slide is about so that its type is still readable at slide size (14 pt or more), and carry the
-  point in the message (bold key words). Do not read values off the image to redraw it: read
-  values are estimates, and printing them would be inventing numbers (SKILL.md rule 20).
+  slide is about so that its type is still readable at slide size (14 pt or more). Then read it for
+  the audience: the point in the message (bold key words), **one ring on the place it is about**
+  (`sk.fig(…, ring=(left, top, right, bottom))`, the box in the image's own pixels) and **a line or
+  two that say what to see** (「雨天の画像の線だけが幅1mm未満で急に下がる」「先行手法では細いひび割れの
+  山が消える」). An original figure with only the message above it is the slide the audience cannot
+  read (lint F9) — keep those lines even when the figure would be larger without them. Do not read
+  values off the image to redraw it: read values are estimates, and printing them would be
+  inventing numbers (SKILL.md rule 20).
 - **Only the picture exists and it is illegible** even when cropped: reading it off (digitising)
   is the last resort. Say so in the notes and the report, check the read values against any number
   the text states, and still print none of them.
@@ -88,8 +93,38 @@ there too.
 
 Is a cropped figure legible? Its smallest text, as it will be shown, must be 14 pt (≈ 19 px) or
 larger: measure the height of a tick label in the original image in px, and multiply by the
-scale at which the crop will be shown (the width it gets on the slide ÷ the crop's width in px).
-A tick label 16 px tall in a crop 900 px wide shown 1,000 px wide is 18 px — just legible.
+scale at which the crop will be shown — `lint --metrics` prints it for every slide as `img ×0.45`.
+A tick label 16 px tall in a crop shown at ×1.1 is 18 px — just legible. When it is too small,
+crop tighter (fewer panels, a wider slot) rather than accept unreadable type; in the appendix,
+where the full figure is reference, small type is tolerated.
+
+**Cutting panels out — `scripts/figpanels.py`.** Composite figures stand on a white ground with
+gutters between the panels, and those gutters can be found by machine; which panel the slide needs
+cannot. So the work is split: the script finds and numbers the panels, you look and choose.
+
+```
+cd <deck-dir>
+python "<skill-dir>/scripts/figpanels.py" <material>/fig3.png --preview figures/_panels_fig3.png
+      → fig3.png: 2057x998 px, 3 panels … ; the preview shows each panel boxed and numbered
+python "<skill-dir>/scripts/figpanels.py" <material>/fig3.png --crop 2 --out figures/fig3_b.png --max-width 1400
+python "<skill-dir>/scripts/figpanels.py" <material>/fig3.png --crop 1,3 --arrange row --out figures/fig3_ac.png
+python "<skill-dir>/scripts/figpanels.py" <material>/fig5.png --box "40,20,1800,300;40,780,1800,980" --arrange col --out figures/fig5_rows.png
+```
+
+- The split follows white space, not meaning: a panel letter or an axis title that stands apart is
+  folded into its panel, but check the preview; when a split is wrong, crop a `--box` or several
+  numbers together. Every output is trimmed to a narrow white margin (`--pad`).
+- Rows picked from a figure laid out as a table (a header row and three of its rows) may be set one
+  above the other with `--box "…;…" --arrange col`: it is still a crop when the header row comes
+  first, the rows keep their original order, and nothing in them is changed.
+- Read the material by its path and write only into the deck's `figures/`.
+
+**Whose figure is it?** When the talk presents the authors' own work (the presenter speaks as an
+author), their figures need no credit on the slide; the paper is named on the cover or in the
+notes. When the figure is someone else's, cite it where it is shown — the reference mark in the
+message, a bullet or the caption, with the entry on the reference slide — and when it is used under
+a licence such as CC BY, the reference entry carries the licence and says it was cropped
+(「文献[3]の図2より一部を切り出し、CC BY 4.0」 on the reference slide, not under the figure).
 
 How to read a figure off, when you must: find the marks (points, bar ends) by their colour or
 shape in the image with a few lines of Pillow / numpy in `prepare.py`; map pixel to value with two
@@ -175,7 +210,8 @@ figure, and supplementary files hold originals. If there is truly none:
 
 No effects: no shadow, tilt, rounded corners or device frame. Do not decorate a photo or a
 screenshot. To point at one place in it, crop to that place, colour its value (`tone="hot"`), or
-name it in the message; a ring is for charts and diagrams of your own (§8, §9).
+name it in the message. A ring is for charts and diagrams — your own (§8, §9), or a chart taken
+from a paper (`sk.fig(…, ring=…)`, §1) — not for photographs.
 
 ## 4. Preparing images and data — `prepare.py`
 
@@ -214,6 +250,9 @@ Print what was selected, and check that it reproduces the numbers in the materia
 example is worse than none). Record the computed numbers in `numbers.md` like any other.
 
 Use only the standard library, `numpy` and `Pillow` unless the environment already has more.
+Write every script as a file in the deck directory and run it by its path: piping a script that
+holds Japanese text or backslashes through a shell here-document can garble it (Windows in
+particular).
 
 ## 5. Bars — `sk.bars()` / `sk.vbars()` / `sk.shares()`
 

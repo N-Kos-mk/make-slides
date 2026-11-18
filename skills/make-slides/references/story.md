@@ -34,13 +34,19 @@ The line of common knowledge decides what gets explained — and the explaining 
 not on the slide. Draw the line deliberately:
 
 - A term everyone in the room uses daily needs no gloss. Explaining it wastes time.
-- A term from your sub-field needs a gloss the first time: one spoken sentence, written in the
-  notes. It goes on the slide only when the audience must keep it in view to follow the figure.
+- A term from your sub-field needs a gloss the first time. Most are glossed aloud: one sentence,
+  written in the notes. A term the talk is built on — the method this work extends, a name that
+  returns on later slides, the measure the results are in — is glossed on the slide too, where it
+  first appears, in a few words woven into the line: 「ひび割れと補修跡を区別して数える **MCI** で
+  区間を評価」. Not 「**MCI**：…」: a row of label and explanation is for the rare slide whose job is
+  to define a few terms. A name the audience meets bare on the method slide and again on every
+  result slide is the one they will ask about first.
 - The line depends on the people, not on how technical the term sounds. For a general graduate
   audience in informatics, 「線形回帰」 needs no explanation but 「Shapley値」 does. For a Japanese
   audience the rules of 麻雀 need no explanation and the rules of poker do.
 
-Make a short list in the outline: terms that get a gloss (and on which slide), terms that do not.
+Make a short list in the outline: terms glossed on a slide (and which slide), terms glossed
+aloud, terms that need none.
 
 Abbreviations: prefer the full word. Use an abbreviation only when the thing appears at least
 twice in the main slides, and introduce it at first use. Standard symbols are welcome where they
@@ -65,6 +71,7 @@ Count main slides including the cover; references, the blank slide and the appen
 | 3 min | 3–4 | 4 |
 | 5 min | 5–7 | 6 |
 | 7 min | 7–9 | 8 |
+| 8 min | 8–10 | 9 |
 | 10 min | 9–12 | 11 |
 | 12 min | 11–14 | 13 |
 | 15 min | 13–18 | 15 |
@@ -80,6 +87,11 @@ Rules of thumb behind the table:
   slides.
 - More than about 1.3 per minute means slides are flipped, not seen. Fewer than 0.6 per minute
   means slides are overloaded.
+- The table is a middle, not a cap. Go to its upper end — the background on two slides, a slide
+  for each part of the method, a slide for a condition that decides how the results read — when
+  the audience lacks the ground the talk stands on, or when the material has many figures worth
+  showing. Folding two things the audience needs into one slide to keep the count down makes both
+  unreadable.
 - Cover: 10–20 seconds. A content slide: 35–75 seconds. A slide with a dense figure: 60–90.
 - A slide that would be on screen for less than 25 seconds does not deserve to exist; merge it.
 - Leave a few percent of the time unassigned. Talks run long, never short.
@@ -111,7 +123,15 @@ a method step — it can go to the appendix.
 shown as what happened (the setting drawn with its people, the stimulus or the item as the
 participant saw it), and the results are read against the hypotheses (§8).
 
-**Progress report (進捗報告)**: 前回からの結論 → 根拠 → 課題 → 次の予定.
+**Progress report (進捗報告)**: 前回からの結論 → 今回の方法（変えた部分ごとに1枚）→ 結果 → 課題 →
+次の予定. When the room has not followed the work week by week (a lab seminar with members on other
+topics), open with the background and the overall method again — one or two slides — before what
+is new.
+
+**Method and results in turn.** When a second step was designed in answer to a first result, the
+talk may follow the work: 提案手法 - 検出 → 結果 - 検出 → 提案手法 - 順位付け → 結果 - 順位付け. The
+audience then sees why the second step exists. Keep the topics paired (the same topic after the
+hyphen in the method and its result); lint K3 lets the method and the results alternate.
 
 **Paper reading (輪講)**: 論文の主張 → 位置づけ → 手法 → 結果 → 批評.
 
@@ -320,6 +340,9 @@ Test: read only the headings and messages, in order. They should give the outlin
   rather than naming its boxes again.
 - Numbers as digits with units, rounded to what matters (約1万2千枚, not 12,436枚).
 - One name for one thing. If it is 「指標」 on slide 5 it is not 「特徴量」 on slide 8.
+- Someone else's method, model, dataset or measure carries its citation mark where it first
+  appears: 「輝度の勾配[4]」. The reference is copied from the material, never recalled; one the
+  material does not give is a `sk.missing_ref` (SKILL.md rule 20).
 - No filler and no sales language: 「非常に」「さまざまな」「重要である」「革新的」「包括的」
   「〜を実現」「〜が鍵」. Say the specific thing.
 - No 「見出し語：説明」 constructions (「線形回帰の理由：〜」「深層学習との違い：〜」). State the
@@ -392,7 +415,9 @@ draw the shape once and name the outcomes once (「視聴時間・正答数・�
 
 **提案手法 / 方法.** Several slides. For a computational method: first an overview as a flow in
 which the boxes are things and the arrows are operations, then each key step on a concrete
-example from the data — the real input, the value computed from it, the formula. For an
+example from the data — the real input, the value computed from it, the formula. Each part the work
+changes or adds gets its own slide (what was done to the input, to the model, to the output): an
+overview whose boxes are those parts does not say what was done to each. For an
 experiment: the setting drawn (who sat where, who faced whom, what was recorded; people as people,
 `sk.person`), then what was measured, shown on the real item or a real case. The dataset or the
 sample is a bullet, not a slide.
@@ -542,7 +567,13 @@ Write `<deck-dir>/outline.md` in the user's language, in this shape:
       not keywords; where there is only one short thing to say, it is planned as a conclusion line.
 - [ ] Every planned diagram has something to show in it (a real case to follow through a flow);
       none is words in boxes.
-- [ ] The method has an overview slide and at least one slide with a concrete example.
+- [ ] The method has an overview slide and a slide for each part the work changes or adds, each
+      with a concrete example.
+- [ ] The slide count was set by what the audience needs (story §3), not squeezed to the bottom of
+      the range.
+- [ ] The terms the talk is built on are glossed on the slide where they first appear.
+- [ ] Every named method, model, dataset or measure from others has its reference located in the
+      material — or is listed as missing, for the user.
 - [ ] The purpose slide states only the purpose.
 - [ ] No slide lays names of kinds along two axes; where this work stands is shown by what
       actually differs, and a position map appears only where the position is the point.

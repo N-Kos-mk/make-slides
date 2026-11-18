@@ -67,6 +67,10 @@ not be silenced.
   and diagrams, captions and tables are not counted. Guide: under 140 (4:3) or 180 (16:9). Too
   little is also a fault: see L6 for lists that do not reach across the slide.
 - `message` — length of the message in full-width characters. Aim for 18 or fewer.
+- `img` — the smallest scale at which a raster image is drawn on the slide (its width on the slide
+  ÷ its width in pixels). Text baked into an image shows at its height in the image × this scale:
+  a 30 px label at `img ×0.45` is 13.5 px, too small (want 19 px, 14 pt). Crop tighter, or give the
+  figure more room.
 
 ## The rules
 
@@ -89,6 +93,7 @@ not be silenced.
 | F4 | error / info | A table whose cells are words (error); any table on a main slide (info). Numbers in the field's notation count as numbers (`.52`, `−.48*`, `(0.59)`, `3.19 (0.59)`, `**`) | A figure or two bullets; tables of numbers go to the appendix |
 | F5 | warn | A chart (bars, or a plot made with `save_fig`) says nowhere where to look: no red or dark-blue bar, no red in the plot, and no bold / red / accent words in the message | Mark the point (SKILL.md rule 3): the key words of the message in bold, the bars it is about in red (`hot=`) or this work in dark blue (`highlight=`), red for the decisive line or point of a plot with a direct label, or one `sk.ring`. One or two of these, not all |
 | F6 | warn | The longest horizontal bar reaches less than 60% of its axis: `axis_max` is far above the data and the right side of the chart is empty | `axis_max` just above the largest value. A total that matters (a time limit, a maximum score) goes in the title or a bullet, or chart the share of it |
+| F9 | info | The slide's only figure is a raster image (a paper's figure, a photo) and nothing beside it says what to read in it: no bullet, no conclusion line, no ring | When it is a figure of data, ring the place it is about (`sk.fig(…, ring=(l, t, r, b))`) and add a line or two that read it. A photograph that speaks for itself may stay as it is |
 | F8 | info | A position map (`sk.posmap`) is on the slide. It is a judgement call every time | Keep it only if the position itself is the point — a trade-off between two amounts that the others each give up and this work holds, which two bullets would not show as quickly (figures.md §7). Otherwise show what actually differs, or say it in two bullets. Name the reason it is needed in the report |
 | F7 | warn | A plot (made with `save_fig`) places marks on two axes that are both lists of names — groups across, kinds up. No place on it means anything: swap two rows and the chart is the same | Show what actually differs: an amount on its own axis at its real values, a time on a time axis, the two settings as pictures — or two bullets (figures.md §7). An axis is an amount or the ordered steps of one |
 
@@ -121,8 +126,8 @@ not be silenced.
 |---|---|---|---|
 | D1 | warn | Too much running text (over ~140 characters at 4:3, ~180 at 16:9; ×1.6 in the appendix) | The slide is explaining. Fewer bullets (keep each one full); move explanation to `notes=` |
 | D3 | warn | Text written as sentences (。, です・ます, である) | Noun-ending phrases |
-| D4 | info | An abbreviation used only once in the main deck | Spell it out, or `known_abbr=[…]` if the audience knows it |
-| D5 | warn | Two or more bullets of the form 「見出し語：説明」 | State the point itself; this label-and-explanation pattern reads as generated. (A bold label in brackets for an item referred to later — 「**[仮説1]** …」 — is not this pattern) |
+| D4 | info | An abbreviation used only once in the main deck. Roman numerals (第II期) and names with a digit (a formula such as CO2, a model number) are not counted | Spell it out, or `known_abbr=[…]` if the audience knows it or it is a name |
+| D5 | warn | Two or more bullets of the form 「見出し語：説明」 | State the point itself; this label-and-explanation pattern reads as generated. (A bold label in brackets for an item referred to later — 「**[仮説1]** …」 — is not this pattern.) A term is glossed inside the line instead: 「〜を数える **MCI** で区間を評価」. On the rare slide whose job is to define a few terms, silence D5 with that reason |
 | D6 | warn | A line stops on the continuative 〜ず (変わらず, 見られず) | End on 〜ない or a noun: 「処理時間は変わらず」→「処理時間は変わらない」 |
 
 ### S — structure
@@ -137,6 +142,13 @@ not be silenced.
 | S8 | warn | The cover title breaks into very uneven lines | Put the `\n` at a phrase boundary near the middle |
 | S9 | warn | Template text is still on a slide | Replace it |
 | S10 | info (deck) | The topics of each part that has two or more, listed side by side | Read them as a set: they name the same kind of thing at one level, not the items of content of each slide. Results: the kind of analysis or measure (精度 / 速度 / 頑健性). Method: the stages of the procedure, all of one kind (装置 / 手順 / 測定 / 分析, or 全体像 / 検出 / 優先度の計算) — not a thing, a setting and a schedule side by side (story.md §4) |
+
+### C — citations
+
+| Rule | Level | Meaning | Fix |
+|---|---|---|---|
+| C1 | warn / info | Names written like methods or models (CamelCase, `++`, hyphenated capitals: RoadSeg++, PaveScan-Net) appear on the main slides and nothing in the deck is cited (warn), or a name never stands on a slide that carries a citation mark (info) | Cite someone else's method, model, dataset or measure where it first appears, its reference copied from the material. This work's own names need none; names the audience knows as products can go in `known_abbr=[…]` |
+| C2 | warn (deck, cannot be silenced) | A reference was entered with `sk.missing_ref`: the material does not give it | **Not yours to clear.** Do not write it from memory. Search the material once more (the name, et al., DOI, arXiv, `.bib`, README); if it is not there, ask the user, and name it first in the report |
 
 ### O — overflow
 
@@ -168,7 +180,7 @@ not be silenced.
 | Rule | Level | Meaning | Fix |
 |---|---|---|---|
 | L3 | warn | Content covers under half of the body height | Enlarge the figure, or merge the slide into a neighbour. Never pad with text |
-| L5 | error | The heading rule sits at a different height on some slide | Do not restyle the header |
+| L5 | error | The heading rule sits at a different height on some slide | Do not restyle the header. (Math in a heading, which also moves the rule, is refused by slidekit before lint runs) |
 | L6 | warn / info | **Balance.** (a) A list — flush left at the margin — reaches less than 70% of the way across a 4:3 slide (65% at 16:9): stubs leave the right side empty. (b) A figure, equation or frame stands more than 4% of the width off the centre line. (c) On a figure slide, the centre of gravity of the body is more than 8% off centre. (info) One long bullet among stubs | (a) Write fuller bullets: each a line that carries a fact with its number, condition or source — not adjectives. Or change the form: one centred `conclusion` line, or the list beside the figure in `cols()`. Never centre the list. (b) Use the components; a hand-drawn diagram should be balanced within its canvas. (c) Fuller bullets, a wider figure, or two columns of similar weight |
 
 ### I — images
@@ -204,7 +216,7 @@ All of these come from hand-written HTML in `raw()`; remove the styling and use 
 |---|---|---|---|
 | K1 | warn / info | Too many or too few main slides for the talk length (outside 0.6–1.3 per minute); talk length not set. A disclosure slide (`deck.disclosure`) is not counted | Cut or move to the appendix; split overloaded slides |
 | K2 | warn / info | `sec=` does not add up to the talk length (a disclosure's seconds count); a main slide planned for under 25 s or over 150 s | Rebalance; merge or split |
-| K3 | warn | A part of the talk resumes after another part | Keep the slides of one part together |
+| K3 | warn | A part of the talk resumes after another part. The method and the results may alternate (提案手法 - 検出 → 結果 - 検出 → 提案手法 - 順位付け → 結果 - 順位付け) | Keep the slides of one part together |
 | K4 | warn | Red text (`!!…!!`) more than once on a slide | Red marks one thing |
 
 ### R — resources
