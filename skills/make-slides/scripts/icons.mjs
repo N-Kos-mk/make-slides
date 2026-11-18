@@ -23,9 +23,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { packageDir } from './lib/deck.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(HERE, 'node_modules', '@iconify-json');
+// scripts/node_modules, or the plugin's root when Claude Code installed the packages there
+const ROOT = packageDir('@iconify-json') || path.join(HERE, 'node_modules', '@iconify-json');
 const SETS = ['healthicons', 'material-symbols', 'ph'];      // order = preference when names tie
 
 const argv = process.argv.slice(2);

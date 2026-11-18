@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { SKILL_DIR, launch } from './lib/deck.mjs';
+import { SKILL_DIR, launch, packageDir } from './lib/deck.mjs';
 
 const scripts = path.join(SKILL_DIR, 'scripts');
 let required = 0;
@@ -24,12 +24,15 @@ line(major >= 18, 'Node.js >= 18', `found ${process.versions.node}`, 'install a 
 if (major < 18) required++;
 
 // playwright-core
-const pw = fs.existsSync(path.join(scripts, 'node_modules', 'playwright-core'));
+const pw = packageDir('playwright-core') !== null;
 line(pw, 'playwright-core', '', `npm install --prefix "${scripts}"`);
 if (!pw) required++;
 
 // open-source icon sets for diagrams (scripts/icons.mjs, sk.icon)
-const iconSets = ['healthicons', 'material-symbols', 'ph'].filter((s) => fs.existsSync(path.join(scripts, 'node_modules', '@iconify-json', s, 'icons.json')));
+const iconSets = ['healthicons', 'material-symbols', 'ph'].filter((s) => {
+  const dir = packageDir(`@iconify-json/${s}`);
+  return dir !== null && fs.existsSync(path.join(dir, 'icons.json'));
+});
 line(iconSets.length === 3, 'icon sets', iconSets.length ? iconSets.join(', ') : 'none', `npm install --prefix "${scripts}"`);
 
 // browser

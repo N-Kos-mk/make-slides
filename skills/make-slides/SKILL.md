@@ -165,9 +165,10 @@ cause of a deck that passes lint and still looks wrong.
 node "<skill-dir>/scripts/doctor.mjs"
 ```
 
-It reports what is missing with the exact command to fix it (normally only
-`npm install --prefix "<skill-dir>/scripts"` the first time — it installs the browser driver and
-the open-source icon sets). It needs Node.js, Python 3.9+, and
+It reports what is missing with the exact command to fix it. When the skill was copied by hand,
+that is normally only `npm install --prefix "<skill-dir>/scripts"` the first time — it installs the
+browser driver and the open-source icon sets; installed as a Claude Code plugin, Claude Code
+installs them itself. It needs Node.js, Python 3.9+, and
 an installed Chrome or Edge; nothing is downloaded. matplotlib is needed for plotted figures,
 Pillow for cutting images out of the material.
 
@@ -188,10 +189,11 @@ Establish these before designing anything:
 | Presenter name, affiliation | Take them from the material. If it is unclear whether personal identifiers may appear, use placeholders (氏名 etc.) and say so. |
 | Date, name of the event | Take them from the request or the material. If they are not given, leave them out — no placeholder date in the footer — and say so in the report. |
 
-Ask only for what cannot be defaulted, once, with AskUserQuestion. The promise of this skill is
+Ask only for what cannot be defaulted, once, with your tool for asking the user (AskUserQuestion in
+Claude Code) if you have one. The promise of this skill is
 "material and a talk length are enough"; a questionnaire breaks it.
 
-The user's standing instructions (CLAUDE.md, memory) outrank this skill. The ones that usually
+The user's standing instructions (CLAUDE.md, AGENTS.md, memory) outrank this skill. The ones that usually
 matter here: permission before reading directories outside the working directory; permission
 before viewing rendered images (Phase 6 needs it — ask at the start, together with anything
 else); showing a plan before a large task.

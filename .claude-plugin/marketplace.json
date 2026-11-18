@@ -1,0 +1,13 @@
+{
+  "name": "nkos",
+  "description": "make-slides（資料と発表時間からスライドの PDF を作る skill）の配布元",
+  "owner": {
+    "name": "nKos"
+  },
+  "plugins": [
+    {
+      "name": "make-slides",
+      "source": "./"
+    }
+  ]
+}

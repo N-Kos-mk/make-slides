@@ -38,7 +38,16 @@ import struct
 import sys
 from pathlib import Path
 
-__version__ = "2.5"
+__version__ = "2.5.1"
+
+# deck.py is often run with its output piped (an agent's shell). On Windows that pipe is cp932, which cannot
+# encode every character the messages hold (the dash of the summary, an accented name of a reference): write UTF-8.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        if _stream is not None and (_stream.encoding or "").lower().replace("-", "") != "utf8":
+            _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):  # replaced by an object without reconfigure, or already closed
+        pass
 
 HERE = Path(__file__).resolve().parent
 try:

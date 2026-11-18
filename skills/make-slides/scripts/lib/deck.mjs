@@ -7,6 +7,19 @@ import { spawnSync } from 'node:child_process';
 export const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /**
+ * The installed copy of an npm package, found as Node finds it: <dir>/node_modules/<name> in scripts/ or in a
+ * folder above it. The skill copied by hand has its packages in scripts/node_modules (npm install --prefix);
+ * installed as a Claude Code plugin, they are in the plugin's root, where Claude Code installs them. null if absent.
+ */
+export function packageDir(name) {
+  for (let d = path.join(SKILL_DIR, 'scripts'); ; d = path.dirname(d)) {
+    const p = path.join(d, 'node_modules', name);
+    if (fs.existsSync(p)) return p;
+    if (path.dirname(d) === d) return null;
+  }
+}
+
+/**
  * Accepts a deck directory, deck.py or deck.html. When the directory has a deck.py, it is run
  * first so that deck.html is always current (deck.py is the source; deck.html is generated).
  */

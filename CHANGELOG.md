@@ -6,6 +6,22 @@
 - **マイナー（2.5.0 など）**: 規則・部品・検査規則の追加
 - **メジャー（3.0.0 など）**: 以前に作った `deck.py` がそのままでは動かなくなる変更
 
+## [2.5.1] - 2026-11-19
+
+### 追加
+- Claude Code の plugin として、GitHub から1行で入れられるようにした
+  （`/plugin install make-slides --marketplace N-Kos-mk/make-slides`）。npm の依存は、Claude Code が入れたときと
+  更新したときに自動で入れる
+- README: Claude Code 以外のエージェントに `gh skill install` で入れる手順と、頼み方の例を加えた
+
+### 修正
+- `sk.fig(…, ring=…)` を使ったスライドで、検査規則 A12 が誤って警告していた
+- Windows で `python deck.py` の出力をパイプで受けると、文字コードの誤りで止まっていた
+- 依存が plugin の最上位に入っていても、`doctor.mjs` と `icons.mjs` が見つけられるようにした
+
+### 変更
+- `SKILL.md`: ユーザーに質問する道具と、優先する指示ファイルの書き方を、Claude Code 以外のエージェントにも当てはまる形にした
+
 ## [2.5.0] - 2026-11-18
 
 ### 追加
@@ -42,5 +58,6 @@
   アイコンの検索と取得（`icons.mjs`）
 - すべての型の見本（`assets/gallery/`、題材はすべて架空）
 
+[2.5.1]: https://github.com/N-Kos-mk/make-slides/releases/tag/v2.5.1
 [2.5.0]: https://github.com/N-Kos-mk/make-slides/releases/tag/v2.5.0
 [2.4.0]: https://github.com/N-Kos-mk/make-slides/releases/tag/v2.4.0

@@ -816,7 +816,8 @@ const main = async () => {
     if (!info.n) throw new Error('no <section class="slide"> found in the deck');
     // classes defined by the linked stylesheets (read from disk: file:// sheets are opaque to page scripts)
     const hrefs = await page.evaluate(() => [...document.querySelectorAll('link[rel="stylesheet"]')].map((l) => l.href));
-    const knownClasses = new Set(['slide', 'appendix', 'backmatter']);
+    // markers that slidekit writes for the lint, not for the look (ringed: fig(ring=) — F9)
+    const knownClasses = new Set(['slide', 'appendix', 'backmatter', 'ringed']);
     const themeIssues = [];
     for (const href of hrefs) {
       let file;
