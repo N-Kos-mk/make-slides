@@ -1,0 +1,19 @@
+{
+  "name": "make-slides",
+  "version": "2.4.0",
+  "description": "資料と発表時間から、正式な場で使える整ったスライド（ベクターPDF）を作る skill。学会発表・中間発表・ゼミ・進捗報告・業務の説明向け",
+  "author": {
+    "name": "nKos"
+  },
+  "homepage": "https://github.com/N-Kos-mk/make-slides",
+  "repository": "https://github.com/N-Kos-mk/make-slides",
+  "license": "MIT",
+  "keywords": [
+    "slides",
+    "presentation",
+    "pdf",
+    "japanese",
+    "スライド",
+    "発表資料"
+  ]
+}

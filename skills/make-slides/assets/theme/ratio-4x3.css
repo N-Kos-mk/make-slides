@@ -1,0 +1,8 @@
+/* 4:3 — 10in x 7.5in (960 x 720 px). Link AFTER slide.css. */
+@page { size: 960px 720px; margin: 0; }
+:root {
+  --slide-w: 960px;
+  --slide-h: 720px;
+  --pad-x: 56px;
+  --gutter: 32px;
+}

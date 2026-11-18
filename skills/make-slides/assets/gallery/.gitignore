@@ -1,0 +1,5 @@
+out/png/
+out/sheet-*.png
+out/lint.json
+figures/__pycache__/
+figures/.fontcache/

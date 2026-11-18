@@ -1,0 +1,615 @@
+/* ==========================================================================
+   make-slides theme v2 — slide.css
+   --------------------------------------------------------------------------
+   Canvas uses PowerPoint's physical geometry, so 1pt here == 1pt in PowerPoint:
+     4:3  = 10in     x 7.5in = 960  x 720 CSS px   (ratio-4x3.css)
+     16:9 = 13.333in x 7.5in = 1280 x 720 CSS px   (ratio-16x9.css)
+
+   Anatomy of every content slide (top to bottom):
+     1. heading   large, light weight, accent colour, thick rule under it  (研究背景 / 結果 - 精度)
+     2. message   one short phrase                                        (細いひび割れほど見落とし)
+     3. figure    the main thing; it takes the space the words leave
+     4. words     at most three short bullets, or one bold centred line
+     footer: date bottom-left, page number bottom-right
+
+   DO NOT EDIT PER DECK. A deck changes its look only through the ratio file it
+   links and the optional accent override (:root { --accent / --accent-tint }).
+   ========================================================================== */
+
+@font-face {
+  font-family: "Noto Sans JP";
+  src: url("fonts/NotoSansJP-Light.woff2") format("woff2");
+  font-weight: 300; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "Noto Sans JP";
+  src: url("fonts/NotoSansJP-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "Noto Sans JP";
+  src: url("fonts/NotoSansJP-Bold.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: block;
+}
+
+/* ---------- tokens -------------------------------------------------------- */
+:root {
+  /* canvas */
+  --slide-w: 960px;
+  --slide-h: 720px;
+  --pad-x: 56px;
+  --pad-t: 30px;
+  --pad-b: 46px;
+  --gutter: 32px;
+
+  /* type scale (pt) — the ONLY font sizes a slide may use */
+  --fs-head:  34pt;   /* slide heading */
+  --fs-cover: 30pt;   /* cover title */
+  --fs-large: 24pt;   /* summary bullets, the value under a sample image */
+  --fs-msg:   22pt;   /* message under the heading, conclusion line, boxed statement */
+  --fs-body:  20pt;   /* bullets */
+  --fs-sub:   17pt;   /* chart labels, table cells, labels inside diagrams */
+  --fs-small: 14pt;   /* captions, axis text, remarks */
+  --fs-tiny:  12pt;   /* sources, citation marks, footer */
+
+  /* ink */
+  --ink:   #1a2330;   /* text */
+  --ink-2: #4a5665;   /* secondary text, axes */
+  --ink-3: #7a8593;   /* footer, de-emphasised */
+  --line:  #c9d0d8;   /* hairlines */
+  --tint:  #f1f4f7;   /* neutral pale fill */
+  --bg:    #ffffff;
+
+  /* accent: one dark blue. Deck may override these two. */
+  --accent:      #1f3f6b;   /* heading, rule, frames, the subject in a chart */
+  --accent-tint: #e9eff7;
+  --accent-2:    #7fa7d1;   /* lighter variant of the subject (a second bar of the same kind) */
+  --accent-text: #2a62a8;   /* blue running text (e.g. future work in the summary) */
+
+  /* red: the one thing to look at. At most one use per slide. */
+  --hot:      #c8372d;
+  --hot-tint: #fbeceb;
+
+  /* grey marks: everything a chart shows only for comparison */
+  --c-mute: #a9b0b8;
+
+  /* spacing (4px grid) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+
+  --font: "Noto Sans JP", "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic Medium", "Yu Gothic", Meiryo, sans-serif;
+}
+
+/* ---------- reset ---------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, h1, h2, h3, h4, p, ul, ol, li, dl, dt, dd, figure, figcaption, table, blockquote {
+  margin: 0; padding: 0;
+}
+ul, ol { list-style: none; }
+img, svg { display: block; }
+html {
+  font-family: var(--font);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+/* ---------- slide frame ---------------------------------------------------- */
+body { counter-reset: slide; }
+
+.slide {
+  position: relative;
+  width: var(--slide-w);
+  height: var(--slide-h);
+  padding: var(--pad-t) var(--pad-x) var(--pad-b);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.45;
+  counter-increment: slide;
+  /* Japanese line breaking: break at phrase boundaries, never mid-word */
+  word-break: auto-phrase;
+  line-break: strict;
+  overflow-wrap: break-word;
+  font-kerning: normal;
+}
+
+/* footer: date bottom-left (from data-date), page number bottom-right */
+.slide::before, .slide::after {
+  position: absolute;
+  bottom: 16px;
+  font-size: var(--fs-tiny);
+  line-height: 1;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.slide::before { content: attr(data-date); left: var(--pad-x); }
+.slide::after { content: counter(slide); right: var(--pad-x); }
+.slide.cover::before, .slide.cover::after, .slide.blank::before, .slide.blank::after { content: none; }
+
+/* ---------- heading + rule, message ------------------------------------------
+   The heading names the part of the talk, optionally with a topic: 「結果 - 精度」.
+   The message is one short phrase: what this slide says.                       */
+.head {
+  grid-row: 1;
+  padding-bottom: 7px;
+  border-bottom: 3px solid var(--accent);
+}
+.heading {
+  font-size: var(--fs-head);
+  font-weight: 300;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  white-space: nowrap;
+  font-feature-settings: "palt";
+}
+.msg {
+  grid-row: 2;
+  margin-top: 16px;
+  font-size: var(--fs-msg);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+/* ---------- body ------------------------------------------------------------
+   Blocks are stacked; free space is shared evenly above, between and below them.
+   A block marked "fill" (images, charts) takes all the space the others leave. */
+.body {
+  grid-row: 3;
+  margin-top: 16px;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 16px;
+}
+.body > * { flex: 0 0 auto; }
+.slide:not(:has(> .msg)) .body { margin-top: 24px; }
+
+/* ---------- columns (12-column grid) ----------------------------------------
+   <div class="cols c-5-7"><div class="col">…</div><div class="col">…</div></div> */
+.body > .cols { flex: 1 1 0; }
+.cols {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  column-gap: var(--gutter);
+  align-items: stretch;
+}
+.col {
+  min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: var(--s4);
+}
+.col > * { flex: 0 0 auto; }
+.c-6-6 > :nth-child(1), .c-6-6 > :nth-child(2) { grid-column: span 6; }
+.c-5-7 > :nth-child(1) { grid-column: span 5; } .c-5-7 > :nth-child(2) { grid-column: span 7; }
+.c-7-5 > :nth-child(1) { grid-column: span 7; } .c-7-5 > :nth-child(2) { grid-column: span 5; }
+.c-4-8 > :nth-child(1) { grid-column: span 4; } .c-4-8 > :nth-child(2) { grid-column: span 8; }
+.c-8-4 > :nth-child(1) { grid-column: span 8; } .c-8-4 > :nth-child(2) { grid-column: span 4; }
+.c-4-4-4 > * { grid-column: span 4; }
+
+/* ---------- text ------------------------------------------------------------ */
+p { text-wrap: balance; }
+.note  { font-size: var(--fs-small); line-height: 1.45; color: var(--ink-2); text-align: center; }
+.source { font-size: var(--fs-tiny); line-height: 1.4; color: var(--ink-2); }
+
+/* emphasis: bold for keywords only. No italics, no underline. */
+strong, b { font-weight: 700; }
+em { font-style: normal; font-weight: 700; }
+.key   { font-weight: 700; color: var(--accent); }
+.alert { font-weight: 700; color: var(--hot); }
+
+/* citation mark:  <cite class="ref">[1]</cite> */
+.ref {
+  font-style: normal; font-weight: 400;
+  font-size: var(--fs-tiny); line-height: 1;
+  color: var(--ink-2);
+  vertical-align: 0.5em;
+  margin-left: 1px;
+  white-space: nowrap;
+}
+.ref::before { content: "\2060"; }   /* word joiner: never start a line with a citation mark */
+
+/* ---------- bullets -----------------------------------------------------------
+   <ul class="points"><li>…<span class="then">…</span></li></ul>
+   One level only.
+   A list is FLUSH LEFT at the margin, on the same left edge as the heading and the message.
+   It is never centred as a block (that looks amateurish) — so its lines have to carry their
+   width: bullets that reach well across the slide, not stubs that leave the right half empty.
+   The one exception is a list that is a sub-element — inside a column of cols() — which is
+   centred in its column.
+   Lines never wrap by themselves: the author places every break (\n).                        */
+.points { display: flex; flex-direction: column; gap: 10px; }
+.points > li { position: relative; padding-left: 26px; white-space: nowrap; }
+.col > .points { align-self: center; width: fit-content; max-width: 100%; }
+.points > li::before {
+  content: ""; position: absolute; left: 7px; top: 0.725em;
+  width: 7px; height: 7px; margin-top: -3.5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+/* the consequence of a bullet, on its own line: 「→ 大規模データで未検証」 */
+.then { display: block; }
+.then::before { content: "\2192\2009"; }
+.points.large { font-size: var(--fs-large); gap: 18px; line-height: 1.4; }
+.points.large > li { padding-left: 30px; }
+.points.large > li::before { left: 8px; width: 8px; height: 8px; margin-top: -4px; }
+.points.accent { color: var(--accent-text); }
+
+/* the summary: two lists (conclusions, what comes next), both flush left at the margin */
+.summary { display: flex; flex-direction: column; gap: 34px; }
+
+/* one bold centred line: the conclusion of the slide (no box) */
+.conclusion {
+  align-self: center;
+  font-size: var(--fs-msg);
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* a framed statement. The frame hugs the text; the text is centred, so the space
+   left and right of it is always equal. */
+.boxed {
+  align-self: center;
+  width: fit-content; max-width: 100%;
+  padding: 14px 30px;
+  border: 2.5px solid var(--accent);
+  font-size: var(--fs-msg);
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* premises -> arrow -> framed statement (the "purpose" slide).
+   Here the list is part of one composition with a centred arrow and frame, so it is centred as a
+   block (lines flush left inside it). Premises that reach the right edge look flush left anyway;
+   shorter ones sit on the same axis as the arrow and the frame instead of leaving the right empty. */
+.therefore { display: flex; flex-direction: column; align-items: stretch; gap: 40px; }
+.therefore > .points { align-self: center; width: fit-content; max-width: 100%; gap: 20px; }
+.therefore > .boxed { font-size: var(--fs-large); padding: 20px 40px; }   /* the one statement of the talk */
+.arrow-down { align-self: center; fill: var(--accent); }
+
+/* ---------- figure --------------------------------------------------------------------
+   <figure class="fig"><img src="figures/x.svg" alt=""><figcaption>…</figcaption></figure> */
+.fig { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; min-height: 0; align-self: center; max-width: 100%; }
+.fig img, .fig svg { max-width: 100%; }
+.fig figcaption, .samples-caption {
+  font-size: var(--fs-small); line-height: 1.4; color: var(--ink-2); text-align: center; text-wrap: balance;
+}
+/* a raster image that takes all the height the slide has left, keeping its aspect ratio */
+.fig.fill { flex: 1 1 0; align-self: stretch; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; }
+.fig.fill img { height: 100%; width: auto; max-width: 100%; object-fit: contain; }
+/* screenshots / photos get a hairline so a white edge is visible */
+.shot { outline: 1px solid var(--line); outline-offset: -1px; }
+
+/* ---------- samples: real images side by side, each with its value ------------------------
+   <div class="samples"><figure class="sample"><img …><figcaption>
+     <span class="sample-value">0.11</span><span class="sample-note">平均評定 6.48点</span>
+   </figcaption></figure> … </div>                                                           */
+.samples-wrap { flex: 1 1 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; row-gap: 8px; }
+.samples {
+  min-height: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  column-gap: 28px;
+}
+.samples.tight { column-gap: 14px; }
+.sample { min-height: 0; min-width: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; row-gap: 6px; }
+.sample img { height: 100%; width: auto; max-width: 100%; object-fit: contain; }
+.sample figcaption { display: flex; flex-direction: column; align-items: center; }
+.sample-value { font-size: var(--fs-large); font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sample-value.accent { color: var(--accent); }
+.sample-value.hot { color: var(--hot); }
+.sample-note { font-size: var(--fs-small); line-height: 1.35; color: var(--ink-2); white-space: nowrap; }
+.samples.sm .sample-value { font-size: var(--fs-body); }
+/* stacked: one above the other (for a narrow column beside a plot) */
+.samples.stack { grid-auto-flow: row; grid-template-rows: none; grid-auto-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); row-gap: 14px; }
+
+/* ---------- horizontal bar chart (HTML) -------------------------------------------------
+   <div class="bars" style="--n: 12">
+     <div class="bar hot"><span class="bar-label">幅1mm未満</span>
+       <span class="bar-track"><i style="--f: 0.81"></i><span class="bar-val">24.3</span></span></div>
+   </div>
+   The chart takes the height the slide has left (up to 50px per bar).                    */
+.chart-title { font-size: var(--fs-small); line-height: 1.5; color: var(--ink-2); text-align: center; }
+.chart { flex: 1 1 0; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.chart.bars-chart { max-height: calc(var(--n) * 50px + var(--extra, 0px)); }
+.bars {
+  flex: 1 1 0; min-height: 0;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
+  column-gap: 14px;
+  font-size: var(--fs-sub);
+  line-height: 1.2;
+}
+.bars.dense { font-size: var(--fs-small); }      /* nine bars or more */
+.bar { display: contents; }
+.bar-label { align-self: center; white-space: nowrap; text-align: right; }
+.bar-track {
+  display: flex; align-items: center; gap: 8px;
+  border-left: 1.5px solid var(--ink-2);
+  min-width: 0; min-height: 0;
+}
+.bar-track i {
+  /* the track keeps room at the right so the value label always fits */
+  flex: 0 0 calc(var(--f) * (100% - 4.2em));
+  height: 66%; max-height: 30px;
+  background: var(--c-mute);
+}
+.bar-val { font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+.bar.hl .bar-track i { background: var(--accent); }
+.bar.hl2 .bar-track i { background: var(--accent-2); }
+.bar.hot .bar-track i { background: var(--hot); }
+.bar.hl .bar-label, .bar.hl .bar-val, .bar.hl2 .bar-label, .bar.hl2 .bar-val { font-weight: 700; color: var(--ink); }
+.bar.hot .bar-label { font-weight: 700; }
+.bar.hot .bar-val { font-weight: 700; color: var(--hot); }
+/* signed values: bars grow left and right from a centre line */
+.bars.signed .bar-track { position: relative; border-left: 0; align-self: stretch; --half: calc(50% - 3.3em); }
+.bars.signed .bar-track::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1.5px solid var(--ink-2); }
+.bars.signed .bar-track i { position: absolute; top: 17%; height: 66%; max-height: none; flex: none; width: calc(var(--f) * var(--half)); }
+.bars.signed .bar-track.pos i { left: 50%; }
+.bars.signed .bar-track.neg i { right: 50%; }
+.bars.signed .bar-val { position: absolute; top: 50%; transform: translateY(-50%); }
+.bars.signed .pos .bar-val { left: calc(50% + var(--f) * var(--half) + 8px); }
+.bars.signed .neg .bar-val { right: calc(50% + var(--f) * var(--half) + 8px); }
+/* what each direction means, under the two ends of the axis: bars(signed=True, ends=(…, …)) */
+.bars.has-ends { grid-template-rows: repeat(var(--n), minmax(0, 1fr)) auto; grid-auto-rows: auto; }
+.bar-ends { display: flex; justify-content: space-between; gap: 24px; padding-top: 4px; font-size: var(--fs-small); line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
+.bar-ends > :first-child::before { content: "\2190\2009"; }
+.bar-ends > :last-child::after { content: "\2009\2192"; }
+
+/* ---------- vertical bar chart (HTML) ---------------------------------------------------
+   <div class="vbars"><div class="vbar hl"><div class="vbar-plot"><span class="vbar-val">0.569</span>
+     <i style="--f: 0.95"></i></div><div class="vbar-label">本研究</div></div> … </div>      */
+.chart.vbars-chart { max-height: 400px; }
+.vbars {
+  flex: 1 1 0; min-height: 0;
+  align-self: center;
+  width: 100%; max-width: calc(var(--n) * 164px);      /* equal columns, at most 164px each */
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.vbar { display: grid; grid-row: 1 / 3; grid-template-rows: subgrid; min-width: 0; }
+.vbar-plot {
+  min-height: 0;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  padding: 0 14px;
+  border-bottom: 1.5px solid var(--ink-2);
+}
+.vbar-val { font-size: var(--fs-sub); line-height: 1.2; margin-bottom: 4px; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+.vbar-plot i { flex: 0 0 calc(var(--f) * (100% - 30px)); width: 100%; background: var(--c-mute); }
+.vbar-label { padding: 8px 4px 0; font-size: var(--fs-small); line-height: 1.3; text-align: center; text-wrap: balance; }
+.vbar.hl .vbar-plot i { background: var(--accent); }
+.vbar.hl2 .vbar-plot i { background: var(--accent-2); }
+.vbar.hot .vbar-plot i { background: var(--hot); }
+.vbar.hl .vbar-val, .vbar.hl2 .vbar-val { font-weight: 700; color: var(--ink); }
+.vbar.hot .vbar-val { font-weight: 700; color: var(--hot); }
+.vbar.hl .vbar-label, .vbar.hl2 .vbar-label, .vbar.hot .vbar-label { font-weight: 700; }
+/* two bars standing alone on the slide (not in a column): wider columns and gaps, so that the
+   chart is still the main thing and not a narrow strip in the middle */
+.body > .vbars-chart .vbars:has(> .vbar:nth-child(2):last-child) { max-width: 460px; }
+.body > .vbars-chart .vbars:has(> .vbar:nth-child(2):last-child) .vbar-plot { padding: 0 32px; }
+
+/* ---------- shares: bars that each run to 100%, split into named parts (HTML) --------------
+   <div class="chart shares-chart" style="--n: 2"><p class="chart-title">問い合わせ全体に占める割合（%）</p>
+     <div class="shares"><span class="share-label">導入前</span><span class="share-track">
+       <i class="share-seg hot" style="--f: 0.38"><span class="share-name">自動で回答</span><span class="share-val">38%</span></i>
+       <i class="share-seg p1" style="--f: 0.62">…</i></span> …</div></div>
+   Every segment carries its value, and its name where it fits. Up to 64px per bar.             */
+.chart.shares-chart { max-height: calc(var(--n) * 100px + 30px); }
+.shares {
+  flex: 1 1 0; min-height: 0;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
+  column-gap: 14px;
+  font-size: var(--fs-sub);
+  line-height: 1.2;
+}
+.share-label { align-self: center; white-space: nowrap; text-align: right; }
+.share-track { display: flex; align-self: center; height: 72%; max-height: 64px; min-width: 0; }
+.share-seg {
+  flex: 0 0 calc(var(--f) * 100%);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  min-width: 0; padding: 0 8px;
+  font-style: normal; white-space: nowrap; font-variant-numeric: tabular-nums;
+  background: var(--c-mute); color: var(--ink);
+}
+.share-seg + .share-seg { border-left: 2px solid var(--bg); }
+.share-name, .share-val { line-height: 1.2; }
+.share-seg.p1 { background: var(--c-mute); }
+.share-seg.p2 { background: var(--line); }
+.share-seg.p3 { background: var(--tint); }
+.share-seg.hot { background: var(--hot); color: var(--bg); font-weight: 700; }
+.share-seg.hl { background: var(--accent); color: var(--bg); font-weight: 700; }
+
+/* legend for charts: <div class="legend"><span class="k hot">補修が必要</span>…</div> */
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; font-size: var(--fs-small); color: var(--ink-2); line-height: 1.4; }
+.legend .k { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.legend .k::before { content: ""; width: 12px; height: 12px; background: var(--c-mute); flex: none; }
+.legend .k.accent::before { background: var(--accent); }
+.legend .k.light::before { background: var(--accent-2); }
+.legend .k.hot::before { background: var(--hot); }
+
+/* ---------- flow: things in boxes, operations on the arrows -------------------------------
+   <div class="flow"><div class="thing">…<p class="thing-label">Webサイト画像</p></div>
+   <div class="op"><span class="op-label">指標を計算</span><span class="op-arrow"></span></div> …
+   A box is a THING (data, an artefact, a result). What is done to it is written on the arrow. */
+.flow { align-self: stretch; display: flex; align-items: stretch; justify-content: center; }
+.thing {
+  flex: 0 0 auto; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px 12px;
+  background: var(--tint);
+}
+.thing.accent { background: var(--accent-tint); }
+.thing-media { display: flex; justify-content: center; }
+.thing-media img { max-width: 100%; }
+.thing-value { font-size: var(--fs-large); font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* the thing is a set of named numbers: <dl class="thing-values"><div><dt>ひび割れ率</dt><dd>4.2%</dd></div>…</dl> */
+.thing-values { display: grid; grid-template-columns: auto auto; column-gap: 14px; row-gap: 3px; font-size: var(--fs-small); line-height: 1.4; }
+.thing-values > div { display: contents; }
+.thing-values dt { white-space: nowrap; }
+.thing-values dd { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.thing-values .more dt { grid-column: 1 / -1; color: var(--ink-2); }
+.thing-label { font-size: var(--fs-sub); line-height: 1.3; text-align: center; white-space: nowrap; }
+.thing.accent .thing-label { font-weight: 700; color: var(--accent); }     /* bold only on the one box that matters */
+.op {
+  flex: 1 0 auto; min-width: 60px; max-width: 180px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 0 6px 28px;            /* the label sits above the arrow; the arrow stays on the centre line */
+}
+.op-label { font-size: var(--fs-small); line-height: 1.3; color: var(--ink-2); text-align: center; white-space: nowrap; }
+.op-arrow { position: relative; width: 100%; height: 12px; }
+.op-arrow::before { content: ""; position: absolute; left: 0; right: 2px; top: 50%; margin-top: -1px; border-top: 2px solid var(--ink-2); }
+.op-arrow::after {
+  content: ""; position: absolute; right: 1px; top: 50%;
+  width: 9px; height: 9px; margin-top: -4.5px;
+  border-top: 2px solid var(--ink-2); border-right: 2px solid var(--ink-2);
+  transform: rotate(45deg);
+}
+.op.bare { padding-bottom: 0; }
+
+/* ---------- table: numbers only -----------------------------------------------------------
+   Horizontal rules only. Numbers: class="n" (right-aligned, tabular).                       */
+.tbl {
+  align-self: center;
+  border-collapse: collapse;
+  font-size: var(--fs-sub);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+.tbl.full { width: 100%; }
+.tbl.sm { font-size: var(--fs-small); }
+.tbl.sm th, .tbl.sm td { padding-top: 5px; padding-bottom: 5px; }
+.tbl th, .tbl td { padding: 7px 16px; text-align: left; vertical-align: baseline; }
+.tbl thead th {
+  font-size: var(--fs-small);
+  font-weight: 400;
+  color: var(--ink-2);
+  white-space: nowrap;
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding-top: 8px; padding-bottom: 8px;
+}
+.tbl tbody td { border-bottom: 1px solid var(--line); }
+.tbl tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+.tbl .n { text-align: right; white-space: nowrap; }
+.tbl tr.hl td { background: var(--accent-tint); font-weight: 700; }
+.tbl tr.hot td { color: var(--hot); font-weight: 700; }
+.tbl tr.dim td { color: var(--ink-3); }
+.tbl caption {
+  caption-side: bottom; text-align: left;
+  font-size: var(--fs-tiny); color: var(--ink-2); line-height: 1.4;
+  padding-top: 8px;
+}
+
+/* ---------- inline SVG diagrams -----------------------------------------------------------
+   Draw at scale 1: width/height attributes equal the viewBox size.                        */
+svg.dia { overflow: visible; font-family: var(--font); }
+.dia text { fill: var(--ink); font-size: var(--fs-sub); }
+.dia .t-sm { font-size: var(--fs-small); }
+.dia .t-body { font-size: var(--fs-body); }
+.dia .t-bold { font-weight: 700; }
+.dia .t-mute { fill: var(--ink-2); }
+.dia .t-accent { fill: var(--accent); }
+.dia .t-hot { fill: var(--hot); }
+.dia .t-mid { text-anchor: middle; }
+.dia .t-end { text-anchor: end; }
+.dia .ln { fill: none; stroke: var(--ink-2); stroke-width: 1.5; }
+.dia .ln-bold { fill: none; stroke: var(--ink-2); stroke-width: 2.5; }
+.dia .ln-hair { fill: none; stroke: var(--line); stroke-width: 1; }
+.dia .ln-accent { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.dia .ln-hot { fill: none; stroke: var(--hot); stroke-width: 2.5; }
+.dia .ln-dash { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 7 6; }
+.dia .f-tint { fill: var(--tint); color: var(--tint); }
+.dia .f-accent-tint { fill: var(--accent-tint); color: var(--accent-tint); }
+.dia .f-accent { fill: var(--accent); color: var(--accent); }
+.dia .f-accent-2 { fill: var(--accent-2); color: var(--accent-2); }
+.dia .f-hot { fill: var(--hot); color: var(--hot); }
+.dia .f-mute { fill: var(--c-mute); color: var(--c-mute); }
+.dia .f-ink2 { fill: var(--ink-2); color: var(--ink-2); }
+.dia .f-bg { fill: var(--bg); color: var(--bg); }
+/* icons placed with sk.icon(): the group carries the colour class; these keep the icon's own shapes */
+.dia .ic-s { fill: none; stroke: currentColor; }
+.dia .ic-nofill { fill: none; }
+
+/* ---------- cover --------------------------------------------------------------------------
+   Left-aligned: event (small) -> title (large, light) -> short thick rule -> who / where / when. */
+.slide.cover {
+  grid-template-rows: minmax(0, 1fr);
+  padding: 0 72px;
+  align-content: center;
+}
+.cover-main { align-self: center; padding-bottom: 28px; }
+.cover-event { font-size: var(--fs-sub); line-height: 1.4; color: var(--ink-2); margin-bottom: 20px; }
+.cover-title {
+  font-size: var(--fs-cover); font-weight: 300; line-height: 1.4;
+  letter-spacing: 0.01em; font-feature-settings: "palt";
+  color: var(--accent);
+  text-wrap: balance;
+}
+.cover-sub { margin-top: 12px; font-size: var(--fs-body); line-height: 1.45; color: var(--ink-2); }
+.cover-rule { width: 132px; height: 0; border-top: 4px solid var(--accent); margin: 30px 0 26px; }
+.cover-meta { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-sub); line-height: 1.45; color: var(--ink-2); }
+
+/* ---------- references ------------------------------------------------------------------------ */
+.refs { counter-reset: ref var(--start, 0); display: flex; flex-direction: column; gap: 11px; font-size: var(--fs-small); line-height: 1.5; }
+.refs li { counter-increment: ref; position: relative; padding-left: 2.6em; word-break: normal; text-wrap: pretty; }
+.refs li::before {
+  content: "[" counter(ref) "]";
+  position: absolute; left: 0; top: 0;
+  color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.refs i, .refs cite { font-style: italic; }   /* Latin journal titles only */
+.slide.backmatter .body { justify-content: flex-start; }
+
+/* ---------- a disclosure the event requires (COI): the statement as a block on the centre line,
+   its lines flush left inside it ------------------------------------------------------------- */
+.slide.disclosure .body { justify-content: center; }
+.disclosure-text { align-self: center; display: flex; flex-direction: column; gap: var(--s4); line-height: 1.5; }
+.disclosure-text p { text-align: left; text-wrap: auto; }
+
+/* ---------- math (KaTeX) -------------------------------------------------------------------------- */
+/* Japanese inside \text{…} falls back to the deck font, not to a system serif */
+.slide .katex { font-size: 1.08em; font-family: KaTeX_Main, "Noto Sans JP", "Times New Roman", serif; }
+.slide .katex-display { margin: 0; }
+/* one display equation, centred: <div class="math-block">$$ … $$</div> */
+.math-block { align-self: center; font-size: var(--fs-msg); padding: 2px 0; }
+.math-block.large { font-size: var(--fs-large); }
+
+/* ---------- blocks that take the free height (stated last so that it always wins) ---------------- */
+.body > .chart, .col > .chart,
+.body > .samples-wrap, .col > .samples-wrap,
+.body > .fig.fill, .col > .fig.fill { flex: 1 1 0; }
+
+/* ---------- speaker notes: never rendered ----------------------------------------------------------- */
+.notes { display: none !important; }
+
+/* ---------- screen preview vs print ------------------------------------------------------------------ */
+@media screen {
+  html { background: #dfe3e8; }
+  body { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 28px 0; }
+  .slide { flex: none; outline: 1px solid #c3cad2; }
+}
+@media print {
+  html, body { background: none; }
+  body { display: block; padding: 0; }
+  .slide { break-after: page; break-inside: avoid; outline: none; }
+}

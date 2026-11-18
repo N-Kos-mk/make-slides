@@ -1,0 +1,16 @@
+# dependencies installed by the user (npm install --prefix skills/make-slides/scripts)
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# by-products of building the gallery inside the skill
+skills/make-slides/assets/gallery/out/png/
+skills/make-slides/assets/gallery/out/sheet-*.png
+skills/make-slides/assets/gallery/out/lint.json
+skills/make-slides/assets/gallery/figures/.fontcache/
+
+# OS / editor
+.DS_Store
+Thumbs.db

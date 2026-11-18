@@ -1,0 +1,9 @@
+/* 16:9 — 13.333in x 7.5in (1280 x 720 px). Link AFTER slide.css. */
+@page { size: 1280px 720px; margin: 0; }
+:root {
+  --slide-w: 1280px;
+  --slide-h: 720px;
+  --pad-x: 72px;
+  --gutter: 40px;
+}
+.slide.cover { padding-left: 104px; padding-right: 104px; }
